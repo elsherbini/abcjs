@@ -180,6 +180,10 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 		if (voice.duplicate)
 			voice.children = []; // we shouldn't reprint the above if we're reusing the same staff. We just created them to get the right spacing.
 		var staffLines = abcstaff.clef.stafflines || abcstaff.clef.stafflines === 0 ? abcstaff.clef.stafflines : 5;
+		var isDiminishedStaff = abcstaff.clef && abcstaff.clef.type === 'diminished';
+		if (isDiminishedStaff) {
+			staffLines = 'diminished';
+		}
 		staffgroup.addVoice(voice, s, staffLines);
 		var isSingleLineStaff = staffLines === 1;
 		this.createABCVoice(abcstaff.voices[v], tempo, s, v, isSingleLineStaff, voice);
