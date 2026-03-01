@@ -22,6 +22,33 @@ var pitchesToPerc = require('../../synth/pitches-to-perc')
 
 var parseCommon = require('../../parse/abc_common');
 
+// Diatonic pitch class to chromatic semitone
+var diatonicToSemitone = [0, 2, 4, 5, 7, 9, 11]; // C, D, E, F, G, A, B
+
+function getDiminishedGroup(pitchElem) {
+	var pitch = pitchElem.pitch;
+	var diatonicPitchClass = ((pitch % 7) + 7) % 7;
+	var semitone = diatonicToSemitone[diatonicPitchClass];
+
+	var acc = pitchElem.accidental;
+	if (acc === 'sharp' || acc === 'quartersharp') semitone += 1;
+	else if (acc === 'flat' || acc === 'quarterflat') semitone -= 1;
+	else if (acc === 'dblsharp') semitone += 2;
+	else if (acc === 'dblflat') semitone -= 2;
+
+	semitone = ((semitone % 12) + 12) % 12;
+
+	// C diminished: C(0), Eb(3), Gb(6), A(9) - yellow, down triangle
+	// Bb diminished: Bb(10), Db(1), E(4), G(7) - red, standard oval
+	// B diminished: B(11), D(2), F(5), Ab(8) - blue, up triangle
+	var cDim = [0, 3, 6, 9];
+	var bbDim = [10, 1, 4, 7];
+
+	if (cDim.indexOf(semitone) >= 0) return 'cDim';
+	if (bbDim.indexOf(semitone) >= 0) return 'bbDim';
+	return 'bDim';
+}
+
 var getDuration = function (elem) {
 	var d = 0;
 	if (elem.duration) {
@@ -684,7 +711,22 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 			}
 		}
 		var c;
-		if (elem.pitches[p].style) { // There is a style for the whole group of pitches, but there could also be an override for a particular pitch.
+		if (voice.isDiminished) {
+			var dimGroup = getDiminishedGroup(elem.pitches[p]);
+			if (dimGroup === 'cDim') {
+				if (zeroDuration) c = chartable.diminishedDown.nostem;
+				else c = chartable.diminishedDown[-durlog];
+				elem.pitches[p].diminishedColor = '#DDDD00';
+			} else if (dimGroup === 'bbDim') {
+				if (zeroDuration) c = chartable.note.nostem;
+				else c = chartable.note[-durlog];
+				elem.pitches[p].diminishedColor = '#DD0000';
+			} else {
+				if (zeroDuration) c = chartable.diminishedUp.nostem;
+				else c = chartable.diminishedUp[-durlog];
+				elem.pitches[p].diminishedColor = '#0000DD';
+			}
+		} else if (elem.pitches[p].style) {
 			c = chartable[elem.pitches[p].style][-durlog];
 		} else if (voice.isPercussion && this.percmap) {
 			c = noteSymbol;

@@ -5658,6 +5658,11 @@ var parseKeyVoice = {};
       clef: 'alto-8',
       pitch: 6,
       mid: -6
+    },
+    'diminished': {
+      clef: 'diminished',
+      pitch: 6,
+      mid: 0
     }
   };
   var calcMiddle = function calcMiddle(clef, oct) {
@@ -6121,6 +6126,7 @@ var parseKeyVoice = {};
         case "tenor":
         case "perc":
         case "none":
+        case "diminished":
           // clef is [clef=] [⟨clef type⟩] [⟨line number⟩] [+8|-8]
           var clef = tokens.shift();
           switch (clef.token) {
@@ -6130,6 +6136,7 @@ var parseKeyVoice = {};
             case 'bass':
             case 'perc':
             case 'none':
+            case 'diminished':
               break;
             case 'C':
               clef.token = 'alto';
@@ -10674,19 +10681,48 @@ function pushLine(tune, hash) {
   tune.lines.push(hash);
 }
 ;
+
+// Diminished staff: maps diatonic pitch + accidental to chromatic verticalPos
+var diatonicToChromatic = [0, 2, 4, 5, 7, 9, 11]; // C=0, D=2, E=4, F=5, G=7, A=9, B=11
+var chromaticToVerticalPos = [0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8];
+function diminishedVerticalPos(pitch, accidental) {
+  var octave = Math.floor(pitch / 7);
+  var diatonicPitchClass = (pitch % 7 + 7) % 7;
+  var semitone = diatonicToChromatic[diatonicPitchClass];
+  if (accidental === 'sharp' || accidental === 'quartersharp') semitone += 1;else if (accidental === 'flat' || accidental === 'quarterflat') semitone -= 1;else if (accidental === 'dblsharp') semitone += 2;else if (accidental === 'dblflat') semitone -= 2;
+  if (semitone < 0) {
+    semitone += 12;
+    octave -= 1;
+  }
+  if (semitone >= 12) {
+    semitone -= 12;
+    octave += 1;
+  }
+  return chromaticToVerticalPos[semitone] + octave * 8;
+}
 function pushNote(self, tune, hp, voiceDefs, currentVoiceName) {
   //console.log("pushNote", tune.lineNum, tune.staffNum, hp.pitches ? JSON.stringify(hp.pitches) : hp.pitches)
   var currStaff = tune.lines[tune.lineNum].staff[tune.staffNum];
   if (hp.pitches !== undefined) {
     var mid = currStaff.workingClef.verticalPos;
+    var isDiminished = currStaff.workingClef.type === 'diminished';
     hp.pitches.forEach(function (p) {
-      p.verticalPos = p.pitch - mid;
+      if (isDiminished) {
+        p.verticalPos = diminishedVerticalPos(p.pitch, p.accidental);
+      } else {
+        p.verticalPos = p.pitch - mid;
+      }
     });
   }
   if (hp.gracenotes !== undefined) {
     var mid2 = currStaff.workingClef.verticalPos;
+    var isDiminished2 = currStaff.workingClef.type === 'diminished';
     hp.gracenotes.forEach(function (p) {
-      p.verticalPos = p.pitch - mid2;
+      if (isDiminished2) {
+        p.verticalPos = diminishedVerticalPos(p.pitch, p.accidental);
+      } else {
+        p.verticalPos = p.pitch - mid2;
+      }
     });
   }
   if (currStaff.voices.length <= tune.voiceNum) {
@@ -18240,6 +18276,27 @@ var VoiceElement = __webpack_require__(/*! ./elements/voice-element */ "./src/wr
 var addChord = __webpack_require__(/*! ./add-chord */ "./src/write/creation/add-chord.js");
 var pitchesToPerc = __webpack_require__(/*! ../../synth/pitches-to-perc */ "./src/synth/pitches-to-perc.js");
 var parseCommon = __webpack_require__(/*! ../../parse/abc_common */ "./src/parse/abc_common.js");
+
+// Diatonic pitch class to chromatic semitone
+var diatonicToSemitone = [0, 2, 4, 5, 7, 9, 11]; // C, D, E, F, G, A, B
+
+function getDiminishedGroup(pitchElem) {
+  var pitch = pitchElem.pitch;
+  var diatonicPitchClass = (pitch % 7 + 7) % 7;
+  var semitone = diatonicToSemitone[diatonicPitchClass];
+  var acc = pitchElem.accidental;
+  if (acc === 'sharp' || acc === 'quartersharp') semitone += 1;else if (acc === 'flat' || acc === 'quarterflat') semitone -= 1;else if (acc === 'dblsharp') semitone += 2;else if (acc === 'dblflat') semitone -= 2;
+  semitone = (semitone % 12 + 12) % 12;
+
+  // C diminished: C(0), Eb(3), Gb(6), A(9) - yellow, down triangle
+  // Bb diminished: Bb(10), Db(1), E(4), G(7) - red, standard oval
+  // B diminished: B(11), D(2), F(5), Ab(8) - blue, up triangle
+  var cDim = [0, 3, 6, 9];
+  var bbDim = [10, 1, 4, 7];
+  if (cDim.indexOf(semitone) >= 0) return 'cDim';
+  if (bbDim.indexOf(semitone) >= 0) return 'bbDim';
+  return 'bDim';
+}
 var getDuration = function getDuration(elem) {
   var d = 0;
   if (elem.duration) {
@@ -18319,6 +18376,30 @@ var chartable = {
     6: "noteheads.triangle.quarter",
     7: "noteheads.triangle.quarter",
     nostem: "noteheads.triangle.quarter"
+  },
+  diminishedUp: {
+    "-1": "noteheads.triangle.whole",
+    0: "noteheads.triangle.whole",
+    1: "noteheads.triangle.half",
+    2: "noteheads.triangle.quarter",
+    3: "noteheads.triangle.quarter",
+    4: "noteheads.triangle.quarter",
+    5: "noteheads.triangle.quarter",
+    6: "noteheads.triangle.quarter",
+    7: "noteheads.triangle.quarter",
+    nostem: "noteheads.triangle.whole"
+  },
+  diminishedDown: {
+    "-1": "noteheads.triangle.down.whole",
+    0: "noteheads.triangle.down.whole",
+    1: "noteheads.triangle.down.half",
+    2: "noteheads.triangle.down.quarter",
+    3: "noteheads.triangle.down.quarter",
+    4: "noteheads.triangle.down.quarter",
+    5: "noteheads.triangle.down.quarter",
+    6: "noteheads.triangle.down.quarter",
+    7: "noteheads.triangle.down.quarter",
+    nostem: "noteheads.triangle.down.whole"
   },
   uflags: {
     3: "flags.u8th",
@@ -18433,6 +18514,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
       voice.headerPosition = 6 + staffgroup.getTextSize.baselineToCenter(voice.header, "voicefont", 'staff-extra voice-name', v, abcstaff.voices.length) / spacing.STEP;
     }
     if (abcstaff.clef && abcstaff.clef.type === "perc") voice.isPercussion = true;
+    if (abcstaff.clef && abcstaff.clef.type === "diminished") voice.isDiminished = true;
     var clef = (!this.initialClef || l === 0) && createClef(abcstaff.clef, this.tuneNumber);
     if (clef) {
       if (v === 0 && abcstaff.barNumber) {
@@ -18459,6 +18541,10 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 
     if (voice.duplicate) voice.children = []; // we shouldn't reprint the above if we're reusing the same staff. We just created them to get the right spacing.
     var staffLines = abcstaff.clef.stafflines || abcstaff.clef.stafflines === 0 ? abcstaff.clef.stafflines : 5;
+    var isDiminishedStaff = abcstaff.clef && abcstaff.clef.type === 'diminished';
+    if (isDiminishedStaff) {
+      staffLines = 'diminished';
+    }
     staffgroup.addVoice(voice, s, staffLines);
     var isSingleLineStaff = staffLines === 1;
     this.createABCVoice(abcstaff.voices[v], tempo, s, v, isSingleLineStaff, voice);
@@ -18975,8 +19061,19 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
       }
     }
     var c;
-    if (elem.pitches[p].style) {
-      // There is a style for the whole group of pitches, but there could also be an override for a particular pitch.
+    if (voice.isDiminished) {
+      var dimGroup = getDiminishedGroup(elem.pitches[p]);
+      if (dimGroup === 'cDim') {
+        if (zeroDuration) c = chartable.diminishedDown.nostem;else c = chartable.diminishedDown[-durlog];
+        elem.pitches[p].diminishedColor = '#DDDD00';
+      } else if (dimGroup === 'bbDim') {
+        if (zeroDuration) c = chartable.note.nostem;else c = chartable.note[-durlog];
+        elem.pitches[p].diminishedColor = '#DD0000';
+      } else {
+        if (zeroDuration) c = chartable.diminishedUp.nostem;else c = chartable.diminishedUp[-durlog];
+        elem.pitches[p].diminishedColor = '#0000DD';
+      }
+    } else if (elem.pitches[p].style) {
       c = chartable[elem.pitches[p].style][-durlog];
     } else if (voice.isPercussion && this.percmap) {
       c = noteSymbol;
@@ -19807,6 +19904,9 @@ var createNoteHead = function createNoteHead(abselem, c, pitchelem, options) {
       thickness: glyphs.symbolHeightInPitches(c) * scale,
       name: pitchelem.name
     };
+    if (pitchelem.diminishedColor) {
+      opts.fill = pitchelem.diminishedColor;
+    }
     notehead = new RelativeElement(c, shiftheadx, glyphs.getSymbolWidth(c) * scale, pitch, opts);
     notehead.stemDir = dir;
     if (flag) {
@@ -21130,6 +21230,7 @@ var RelativeElement = function RelativeElement(c, dx, w, pitch, opt) {
   if (opt.top) this.top = opt.top;
   if (opt.bottom) this.bottom = opt.bottom;
   if (opt.name) this.name = opt.name;else if (this.c) this.name = this.c;else this.name = this.type;
+  if (opt.fill) this.fill = opt.fill;
   if (opt.realWidth) this.realWidth = opt.realWidth;else this.realWidth = this.w;
   this.centerVertically = false;
   switch (this.type) {
@@ -22475,6 +22576,38 @@ glyphs['noteheads.harmonic.quarter'] = {
 };
 glyphs['noteheads.triangle.quarter'] = {
   d: [['M', 0, 4], ['l', 9, 0], ['l', -4.5, -9], ['z']],
+  w: 9,
+  h: 9
+};
+
+// Diminished staff triangle noteheads
+// Up triangle - open (for half notes) - outlined with inner cutout
+glyphs['noteheads.triangle.half'] = {
+  d: [['M', 0, 4], ['l', 9, 0], ['l', -4.5, -9], ['z'], ['M', 1.5, 3], ['l', 6, 0], ['l', -3, -6], ['z']],
+  w: 9,
+  h: 9
+};
+// Up triangle - whole (for whole notes)
+glyphs['noteheads.triangle.whole'] = {
+  d: [['M', 0, 4], ['l', 9, 0], ['l', -4.5, -9], ['z'], ['M', 1.5, 3], ['l', 6, 0], ['l', -3, -6], ['z']],
+  w: 9,
+  h: 9
+};
+// Down triangle - filled (for quarter notes and shorter)
+glyphs['noteheads.triangle.down.quarter'] = {
+  d: [['M', 0, -5], ['l', 9, 0], ['l', -4.5, 9], ['z']],
+  w: 9,
+  h: 9
+};
+// Down triangle - open (for half notes)
+glyphs['noteheads.triangle.down.half'] = {
+  d: [['M', 0, -5], ['l', 9, 0], ['l', -4.5, 9], ['z'], ['M', 1.5, -4], ['l', 6, 0], ['l', -3, 6], ['z']],
+  w: 9,
+  h: 9
+};
+// Down triangle - whole (for whole notes)
+glyphs['noteheads.triangle.down.whole'] = {
+  d: [['M', 0, -5], ['l', 9, 0], ['l', -4.5, 9], ['z'], ['M', 1.5, -4], ['l', 6, 0], ['l', -3, 6], ['z']],
   w: 9,
   h: 9
 };
@@ -23848,14 +23981,17 @@ function drawRelativeElement(renderer, params, bartop) {
       if (params.c === null) return null;
       var klass = "symbol";
       if (params.klass) klass += " " + params.klass;
-      params.graphelem = printSymbol(renderer, params.x, params.pitch, params.c, {
+      var symbolOpts = {
         scalex: params.scalex,
         scaley: params.scaley,
         klass: renderer.controller.classes.generate(klass),
-        //				fill:"none",
-        //				stroke: renderer.foregroundColor,
         name: params.name
-      });
+      };
+      if (params.fill) {
+        symbolOpts.fill = params.fill;
+        symbolOpts.stroke = params.fill;
+      }
+      params.graphelem = printSymbol(renderer, params.x, params.pitch, params.c, symbolOpts);
       break;
     case "debug":
       params.graphelem = renderText(renderer, {
@@ -24524,21 +24660,34 @@ function printStaff(renderer, startx, endx, numLines, linePitch, dy) {
     prepend: true,
     klass: renderer.controller.classes.generate("abcjs-staff")
   });
-  // If there is one line, it is the B line. Otherwise, the bottom line is the E line.
   var firstYLine = 0;
   var lastYLine = 0;
-  if (numLines === 1) {
-    printStaffLine(renderer, startx, endx, 6, klass, null, dy + renderer.lineThickness);
-    firstYLine = renderer.calcY(10);
-    lastYLine = renderer.calcY(2);
-  } else {
-    for (var i = numLines - 1; i >= 0; i--) {
-      var curpitch = (i + 1) * pitch;
+  if (numLines === 'diminished') {
+    // Draw 6 lines in two groups of 3
+    // Bottom group: positions 3, 5, 7
+    // Top group: positions 11, 13, 15
+    var diminishedPositions = [3, 5, 7, 11, 13, 15];
+    for (var d = diminishedPositions.length - 1; d >= 0; d--) {
+      var curpitch = diminishedPositions[d];
       lastYLine = renderer.calcY(curpitch);
       if (firstYLine === 0) {
         firstYLine = lastYLine;
       }
       printStaffLine(renderer, startx, endx, curpitch, klass, null, dy + renderer.lineThickness);
+      klass = undefined;
+    }
+  } else if (numLines === 1) {
+    printStaffLine(renderer, startx, endx, 6, klass, null, dy + renderer.lineThickness);
+    firstYLine = renderer.calcY(10);
+    lastYLine = renderer.calcY(2);
+  } else {
+    for (var i = numLines - 1; i >= 0; i--) {
+      var curpitch2 = (i + 1) * pitch;
+      lastYLine = renderer.calcY(curpitch2);
+      if (firstYLine === 0) {
+        firstYLine = lastYLine;
+      }
+      printStaffLine(renderer, startx, endx, curpitch2, klass, null, dy + renderer.lineThickness);
       klass = undefined;
     }
   }

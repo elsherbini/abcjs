@@ -12,14 +12,17 @@ function drawRelativeElement(renderer, params, bartop) {
 			if (params.c === null) return null;
 			var klass = "symbol";
 			if (params.klass) klass += " " + params.klass;
-			params.graphelem = printSymbol(renderer, params.x, params.pitch, params.c, {
+			var symbolOpts = {
 				scalex: params.scalex,
 				scaley: params.scaley,
 				klass: renderer.controller.classes.generate(klass),
-				//				fill:"none",
-				//				stroke: renderer.foregroundColor,
 				name: params.name
-			});
+			};
+			if (params.fill) {
+				symbolOpts.fill = params.fill;
+				symbolOpts.stroke = params.fill;
+			}
+			params.graphelem = printSymbol(renderer, params.x, params.pitch, params.c, symbolOpts);
 			break;
 		case "debug":
 			params.graphelem = renderText(renderer, { x: params.x, y: renderer.calcY(15), text: "" + params.c, type: "debugfont", klass: renderer.controller.classes.generate('debug-msg'), anchor: 'start', centerVertically: false, dim: params.dim }, false);

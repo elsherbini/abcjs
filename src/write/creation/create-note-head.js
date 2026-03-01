@@ -31,6 +31,9 @@ var createNoteHead = function (abselem, c, pitchelem, options) {
 			shiftheadx = (dir === "down") ? -glyphs.getSymbolWidth(c) * scale + adjust : glyphs.getSymbolWidth(c) * scale - adjust;
 		}
 		var opts = { scalex: scale, scaley: scale, thickness: glyphs.symbolHeightInPitches(c) * scale, name: pitchelem.name };
+		if (pitchelem.diminishedColor) {
+			opts.fill = pitchelem.diminishedColor;
+		}
 		notehead = new RelativeElement(c, shiftheadx, glyphs.getSymbolWidth(c) * scale, pitch, opts);
 		notehead.stemDir = dir;
 		if (flag) {
