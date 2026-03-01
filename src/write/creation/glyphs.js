@@ -107,6 +107,18 @@ glyphs['noteheads.harmonic.quarter'] = { d: [['M', 3.63, -4.02], ['c', 0.09, -0.
 
 glyphs['noteheads.triangle.quarter'] = { d: [['M', 0, 4], ['l', 9, 0], ['l', -4.5, -9], ['z']], w: 9, h: 9 };
 
+// Diminished staff triangle noteheads
+// Up triangle - open (for half notes) - outlined with inner cutout
+glyphs['noteheads.triangle.half'] = { d: [['M', 0, 4], ['l', 9, 0], ['l', -4.5, -9], ['z'], ['M', 1.5, 3], ['l', 6, 0], ['l', -3, -6], ['z']], w: 9, h: 9 };
+// Up triangle - whole (for whole notes)
+glyphs['noteheads.triangle.whole'] = { d: [['M', 0, 4], ['l', 9, 0], ['l', -4.5, -9], ['z'], ['M', 1.5, 3], ['l', 6, 0], ['l', -3, -6], ['z']], w: 9, h: 9 };
+// Down triangle - filled (for quarter notes and shorter)
+glyphs['noteheads.triangle.down.quarter'] = { d: [['M', 0, -5], ['l', 9, 0], ['l', -4.5, 9], ['z']], w: 9, h: 9 };
+// Down triangle - open (for half notes)
+glyphs['noteheads.triangle.down.half'] = { d: [['M', 0, -5], ['l', 9, 0], ['l', -4.5, 9], ['z'], ['M', 1.5, -4], ['l', 6, 0], ['l', -3, 6], ['z']], w: 9, h: 9 };
+// Down triangle - whole (for whole notes)
+glyphs['noteheads.triangle.down.whole'] = { d: [['M', 0, -5], ['l', 9, 0], ['l', -4.5, 9], ['z'], ['M', 1.5, -4], ['l', 6, 0], ['l', -3, 6], ['z']], w: 9, h: 9 };
+
 var pathClone = function (pathArray) {
 	var res = [];
 	for (var i = 0, ii = pathArray.length; i < ii; i++) {
