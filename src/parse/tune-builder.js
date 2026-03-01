@@ -907,17 +907,52 @@ function pushLine(tune, hash) {
 	tune.lines.push(hash);
 };
 
+// Diminished staff: maps diatonic pitch + accidental to chromatic verticalPos
+var diatonicToChromatic = [0, 2, 4, 5, 7, 9, 11]; // C=0, D=2, E=4, F=5, G=7, A=9, B=11
+var chromaticToVerticalPos = [0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8];
+
+function diminishedVerticalPos(pitch, accidental) {
+	var octave = Math.floor(pitch / 7);
+	var diatonicPitchClass = ((pitch % 7) + 7) % 7;
+	var semitone = diatonicToChromatic[diatonicPitchClass];
+
+	if (accidental === 'sharp' || accidental === 'quartersharp') semitone += 1;
+	else if (accidental === 'flat' || accidental === 'quarterflat') semitone -= 1;
+	else if (accidental === 'dblsharp') semitone += 2;
+	else if (accidental === 'dblflat') semitone -= 2;
+
+	if (semitone < 0) { semitone += 12; octave -= 1; }
+	if (semitone >= 12) { semitone -= 12; octave += 1; }
+
+	return chromaticToVerticalPos[semitone] + (octave * 8);
+}
+
 function pushNote(self, tune, hp, voiceDefs, currentVoiceName) {
 	//console.log("pushNote", tune.lineNum, tune.staffNum, hp.pitches ? JSON.stringify(hp.pitches) : hp.pitches)
 	var currStaff = tune.lines[tune.lineNum].staff[tune.staffNum];
 
+
 	if (hp.pitches !== undefined) {
 		var mid = currStaff.workingClef.verticalPos;
-		hp.pitches.forEach(function (p) { p.verticalPos = p.pitch - mid; });
+		var isDiminished = currStaff.workingClef.type === 'diminished';
+		hp.pitches.forEach(function (p) {
+			if (isDiminished) {
+				p.verticalPos = diminishedVerticalPos(p.pitch, p.accidental);
+			} else {
+				p.verticalPos = p.pitch - mid;
+			}
+		});
 	}
 	if (hp.gracenotes !== undefined) {
 		var mid2 = currStaff.workingClef.verticalPos;
-		hp.gracenotes.forEach(function (p) { p.verticalPos = p.pitch - mid2; });
+		var isDiminished2 = currStaff.workingClef.type === 'diminished';
+		hp.gracenotes.forEach(function (p) {
+			if (isDiminished2) {
+				p.verticalPos = diminishedVerticalPos(p.pitch, p.accidental);
+			} else {
+				p.verticalPos = p.pitch - mid2;
+			}
+		});
 	}
 	if (currStaff.voices.length <= tune.voiceNum) {
 		//console.log("should create?", currentVoiceName, voiceDefs)
