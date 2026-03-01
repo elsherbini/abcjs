@@ -39,6 +39,8 @@ var chartable = {
 	x: { "-1": "noteheads.indeterminate", 0: "noteheads.indeterminate", 1: "noteheads.indeterminate", 2: "noteheads.indeterminate", 3: "noteheads.indeterminate", 4: "noteheads.indeterminate", 5: "noteheads.indeterminate", 6: "noteheads.indeterminate", 7: "noteheads.indeterminate", nostem: "noteheads.indeterminate" },
 	harmonic: { "-1": "noteheads.harmonic.quarter", 0: "noteheads.harmonic.quarter", 1: "noteheads.harmonic.quarter", 2: "noteheads.harmonic.quarter", 3: "noteheads.harmonic.quarter", 4: "noteheads.harmonic.quarter", 5: "noteheads.harmonic.quarter", 6: "noteheads.harmonic.quarter", 7: "noteheads.harmonic.quarter", nostem: "noteheads.harmonic.quarter" },
 	triangle: { "-1": "noteheads.triangle.quarter", 0: "noteheads.triangle.quarter", 1: "noteheads.triangle.quarter", 2: "noteheads.triangle.quarter", 3: "noteheads.triangle.quarter", 4: "noteheads.triangle.quarter", 5: "noteheads.triangle.quarter", 6: "noteheads.triangle.quarter", 7: "noteheads.triangle.quarter", nostem: "noteheads.triangle.quarter" },
+	diminishedUp: { "-1": "noteheads.triangle.whole", 0: "noteheads.triangle.whole", 1: "noteheads.triangle.half", 2: "noteheads.triangle.quarter", 3: "noteheads.triangle.quarter", 4: "noteheads.triangle.quarter", 5: "noteheads.triangle.quarter", 6: "noteheads.triangle.quarter", 7: "noteheads.triangle.quarter", nostem: "noteheads.triangle.whole" },
+	diminishedDown: { "-1": "noteheads.triangle.down.whole", 0: "noteheads.triangle.down.whole", 1: "noteheads.triangle.down.half", 2: "noteheads.triangle.down.quarter", 3: "noteheads.triangle.down.quarter", 4: "noteheads.triangle.down.quarter", 5: "noteheads.triangle.down.quarter", 6: "noteheads.triangle.down.quarter", 7: "noteheads.triangle.down.quarter", nostem: "noteheads.triangle.down.whole" },
 	uflags: { 3: "flags.u8th", 4: "flags.u16th", 5: "flags.u32nd", 6: "flags.u64th" },
 	dflags: { 3: "flags.d8th", 4: "flags.d16th", 5: "flags.d32nd", 6: "flags.d64th" }
 };
@@ -155,6 +157,8 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 		}
 		if (abcstaff.clef && abcstaff.clef.type === "perc")
 			voice.isPercussion = true;
+		if (abcstaff.clef && abcstaff.clef.type === "diminished")
+			voice.isDiminished = true;
 		var clef = (!this.initialClef || l === 0) && createClef(abcstaff.clef, this.tuneNumber);
 		if (clef) {
 			if (v === 0 && abcstaff.barNumber) {
