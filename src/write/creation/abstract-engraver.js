@@ -194,7 +194,10 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 			voice.addChild(clef);
 			this.startlimitelem = clef; // limit ties here
 		}
-		var keySig = createKeySignature(abcstaff.key, this.tuneNumber);
+		var keySig = null;
+		if (!(abcstaff.clef && abcstaff.clef.type === 'diminished')) {
+			keySig = createKeySignature(abcstaff.key, this.tuneNumber);
+		}
 		if (keySig) {
 			voice.addChild(keySig);
 			this.startlimitelem = keySig; // limit ties here
@@ -769,7 +772,7 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 
 		var hasStem = !nostem && durlog <= -1;
 		var ret = createNoteHead(abselem, c, elem.pitches[p],
-			{ dir: dir, extrax: -roomTaken, flag: flag, dot: dot, dotshiftx: dotshiftx, scale: this.voiceScale, accidentalSlot: accidentalSlot, shouldExtendStem: !stemdir, printAccidentals: !voice.isPercussion });
+			{ dir: dir, extrax: -roomTaken, flag: flag, dot: dot, dotshiftx: dotshiftx, scale: this.voiceScale, accidentalSlot: accidentalSlot, shouldExtendStem: !stemdir, printAccidentals: !voice.isPercussion && !voice.isDiminished });
 		symbolWidth = Math.max(glyphs.getSymbolWidth(c), symbolWidth);
 		abselem.extraw -= ret.extraLeft;
 		noteHead = ret.notehead;
