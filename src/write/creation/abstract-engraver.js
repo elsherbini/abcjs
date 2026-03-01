@@ -481,7 +481,20 @@ var sortPitch = function (elem) {
 	} while (!sorted);
 };
 
-var ledgerLines = function (abselem, minPitch, maxPitch, isRest, symbolWidth, additionalLedgers, dir, dx, scale) {
+var ledgerLines = function (abselem, minPitch, maxPitch, isRest, symbolWidth, additionalLedgers, dir, dx, scale, isDiminished) {
+	if (isDiminished) {
+		// Diminished staff ledger lines at positions 1, 9, 17
+		if (!isRest && minPitch <= 2) {
+			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 1, { type: "ledger" }));
+		}
+		if (!isRest && ((minPitch <= 10 && minPitch >= 8) || (maxPitch >= 8 && maxPitch <= 10) || (minPitch <= 8 && maxPitch >= 10))) {
+			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 9, { type: "ledger" }));
+		}
+		if (!isRest && maxPitch >= 16) {
+			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 17, { type: "ledger" }));
+		}
+		return;
+	}
 	for (var i = maxPitch; i > 11; i--) {
 		if (i % 2 === 0 && !isRest) {
 			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, i, { type: "ledger" }));
@@ -557,7 +570,7 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 			var width = -0.6;
 			abselem.addExtra(new RelativeElement(null, dx, 0, p1, { "type": "stem", "pitch2": p2, linewidth: width }));
 		}
-		ledgerLines(abselem, gracepitch, gracepitch, false, glyphs.getSymbolWidth("noteheads.quarter"), [], true, grace.dx - 1, 0.6);
+		ledgerLines(abselem, gracepitch, gracepitch, false, glyphs.getSymbolWidth("noteheads.quarter"), [], true, grace.dx - 1, 0.6, voice.isDiminished);
 
 		// if this is the first grace note, we might want to start a slur.
 		// there is a slur if graceSlurs is specifically set.
@@ -899,7 +912,7 @@ AbstractEngraver.prototype.createNote = function (elem, nostem, isSingleLineStaf
 	}
 
 	// ledger lines
-	ledgerLines(abselem, elem.minpitch, elem.maxpitch, elem.rest, symbolWidth, additionalLedgers, dir, -2, 1);
+	ledgerLines(abselem, elem.minpitch, elem.maxpitch, elem.rest, symbolWidth, additionalLedgers, dir, -2, 1, voice.isDiminished);
 
 	if (elem.chord !== undefined) {
 		var ret3 = addChord(this.getTextSize, abselem, elem, roomtaken, roomtakenright, symbolWidth, this.jazzchords, this.germanAlphabet);
