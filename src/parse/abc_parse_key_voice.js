@@ -63,7 +63,8 @@ var parseKeyVoice = {};
 		'alto+8': { clef: 'alto+8', pitch: 6, mid: -6 },
 		'alto-8': { clef: 'alto-8', pitch: 6, mid: -6 },
 		'alto^8': { clef: 'alto+8', pitch: 6, mid: -6 },
-		'alto_8': { clef: 'alto-8', pitch: 6, mid: -6 }
+		'alto_8': { clef: 'alto-8', pitch: 6, mid: -6 },
+		'diminished': { clef: 'diminished', pitch: 6, mid: 0 }
 	};
 
 	var calcMiddle = function(clef, oct) {
@@ -450,6 +451,7 @@ var parseKeyVoice = {};
 				case "tenor":
 				case "perc":
 				case "none":
+				case "diminished":
 					// clef is [clef=] [⟨clef type⟩] [⟨line number⟩] [+8|-8]
 					var clef = tokens.shift();
 					switch (clef.token) {
@@ -459,6 +461,7 @@ var parseKeyVoice = {};
 						case 'bass':
 						case 'perc':
 						case 'none':
+						case 'diminished':
 							break;
 						case 'C': clef.token = 'alto'; break;
 						case 'F': clef.token = 'bass'; break;
