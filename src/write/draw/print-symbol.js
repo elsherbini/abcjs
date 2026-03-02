@@ -32,7 +32,12 @@ function printSymbol(renderer, x, offset, symbol, options) {
 	} else {
 		ycorr = glyphs.getYCorr(symbol);
 		if (elementGroup.isInGroup()) {
-			el = glyphs.printSymbol(x, renderer.calcY(offset + ycorr), symbol, renderer.paper, { "data-name": options.name });
+			var groupOpts = { "data-name": options.name };
+			if (options.fill) {
+				groupOpts.fill = options.fill;
+				groupOpts.stroke = options.fill;
+			}
+			el = glyphs.printSymbol(x, renderer.calcY(offset + ycorr), symbol, renderer.paper, groupOpts);
 		} else {
 			el = glyphs.printSymbol(x, renderer.calcY(offset + ycorr), symbol, renderer.paper, { klass: options.klass, stroke: options.stroke, fill: options.fill, "data-name": options.name });
 		}

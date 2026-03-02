@@ -66,7 +66,7 @@ var chartable = {
 	x: { "-1": "noteheads.indeterminate", 0: "noteheads.indeterminate", 1: "noteheads.indeterminate", 2: "noteheads.indeterminate", 3: "noteheads.indeterminate", 4: "noteheads.indeterminate", 5: "noteheads.indeterminate", 6: "noteheads.indeterminate", 7: "noteheads.indeterminate", nostem: "noteheads.indeterminate" },
 	harmonic: { "-1": "noteheads.harmonic.quarter", 0: "noteheads.harmonic.quarter", 1: "noteheads.harmonic.quarter", 2: "noteheads.harmonic.quarter", 3: "noteheads.harmonic.quarter", 4: "noteheads.harmonic.quarter", 5: "noteheads.harmonic.quarter", 6: "noteheads.harmonic.quarter", 7: "noteheads.harmonic.quarter", nostem: "noteheads.harmonic.quarter" },
 	triangle: { "-1": "noteheads.triangle.quarter", 0: "noteheads.triangle.quarter", 1: "noteheads.triangle.quarter", 2: "noteheads.triangle.quarter", 3: "noteheads.triangle.quarter", 4: "noteheads.triangle.quarter", 5: "noteheads.triangle.quarter", 6: "noteheads.triangle.quarter", 7: "noteheads.triangle.quarter", nostem: "noteheads.triangle.quarter" },
-	diminishedUp: { "-1": "noteheads.triangle.whole", 0: "noteheads.triangle.whole", 1: "noteheads.triangle.half", 2: "noteheads.triangle.quarter", 3: "noteheads.triangle.quarter", 4: "noteheads.triangle.quarter", 5: "noteheads.triangle.quarter", 6: "noteheads.triangle.quarter", 7: "noteheads.triangle.quarter", nostem: "noteheads.triangle.whole" },
+	diminishedUp: { "-1": "noteheads.triangle.whole", 0: "noteheads.triangle.whole", 1: "noteheads.triangle.half", 2: "noteheads.triangle.dim.quarter", 3: "noteheads.triangle.dim.quarter", 4: "noteheads.triangle.dim.quarter", 5: "noteheads.triangle.dim.quarter", 6: "noteheads.triangle.dim.quarter", 7: "noteheads.triangle.dim.quarter", nostem: "noteheads.triangle.whole" },
 	diminishedDown: { "-1": "noteheads.triangle.down.whole", 0: "noteheads.triangle.down.whole", 1: "noteheads.triangle.down.half", 2: "noteheads.triangle.down.quarter", 3: "noteheads.triangle.down.quarter", 4: "noteheads.triangle.down.quarter", 5: "noteheads.triangle.down.quarter", 6: "noteheads.triangle.down.quarter", 7: "noteheads.triangle.down.quarter", nostem: "noteheads.triangle.down.whole" },
 	uflags: { 3: "flags.u8th", 4: "flags.u16th", 5: "flags.u32nd", 6: "flags.u64th" },
 	dflags: { 3: "flags.d8th", 4: "flags.d16th", 5: "flags.d32nd", 6: "flags.d64th" }
@@ -207,7 +207,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 				this.measureLength = abcstaff.meter.value[0].num / abcstaff.meter.value[0].den;
 			} else
 				this.measureLength = 1;
-			var ts = createTimeSignature(abcstaff.meter, this.tuneNumber);
+			var ts = createTimeSignature(abcstaff.meter, this.tuneNumber, voice.isDiminished);
 			voice.addChild(ts);
 			this.startlimitelem = ts; // limit ties here
 		}
@@ -360,7 +360,7 @@ AbstractEngraver.prototype.createABCElement = function (isFirstStaff, isSingleLi
 			//	  elemset[0].addChild(writeMeasureWidth(voice));
 			break;
 		case "meter":
-			elemset[0] = createTimeSignature(elem, this.tuneNumber);
+			elemset[0] = createTimeSignature(elem, this.tuneNumber, voice.isDiminished);
 			this.startlimitelem = elemset[0]; // limit ties here
 			if (voice.duplicate && elemset.length > 0) elemset[0].invisible = true;
 			break;
@@ -441,6 +441,7 @@ AbstractEngraver.prototype.createBeam = function (isSingleLineStaff, voice, elem
 	var abselemset = [];
 
 	var beamelem = new BeamElem(this.stemHeight * this.voiceScale, this.stemdir, this.flatBeams, elems[0]);
+	beamelem.isDiminished = voice.isDiminished;
 	if (hint) beamelem.setHint();
 	for (var i = 0; i < elems.length; i++) {
 		// Do a first pass to figure out the stem direction before creating the notes, so that staccatos and other decorations can be placed correctly.
@@ -483,15 +484,21 @@ var sortPitch = function (elem) {
 
 var ledgerLines = function (abselem, minPitch, maxPitch, isRest, symbolWidth, additionalLedgers, dir, dx, scale, isDiminished) {
 	if (isDiminished) {
-		// Diminished staff ledger lines at positions 1, 9, 17
-		if (!isRest && minPitch <= 2) {
-			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 1, { type: "ledger" }));
-		}
-		if (!isRest && ((minPitch <= 10 && minPitch >= 8) || (maxPitch >= 8 && maxPitch <= 10) || (minPitch <= 8 && maxPitch >= 10))) {
-			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 9, { type: "ledger" }));
-		}
-		if (!isRest && maxPitch >= 16) {
-			abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 17, { type: "ledger" }));
+		// Diminished staff: lines at odd positions. Staff lines at 3,5,7,11,13,15.
+		// Draw ledger lines at other odd positions as needed.
+		if (!isRest) {
+			// Below bottom staff line (3): draw ledger lines at odd positions 1, -1, -3, ...
+			for (var di = 1; di >= minPitch; di -= 2) {
+				abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, di, { type: "ledger" }), true);
+			}
+			// Middle gap: draw ledger line at 9 if notes are in or span the gap
+			if ((minPitch <= 10 && minPitch >= 8) || (maxPitch >= 8 && maxPitch <= 10) || (minPitch <= 8 && maxPitch >= 10)) {
+				abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 9, { type: "ledger" }), true);
+			}
+			// Above top staff line (15): draw ledger lines at odd positions 17, 19, 21, ...
+			for (var dj = 17; dj <= maxPitch; dj += 2) {
+				abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, dj, { type: "ledger" }), true);
+			}
 		}
 		return;
 	}
@@ -590,7 +597,7 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 	return roomtaken;
 };
 
-function addRestToAbsElement(abselem, elem, duration, dot, isMultiVoice, stemdir, isSingleLineStaff, durlog, voiceScale) {
+function addRestToAbsElement(abselem, elem, duration, dot, isMultiVoice, stemdir, isSingleLineStaff, durlog, voiceScale, isDiminished) {
 	var c;
 	var restpitch = 7;
 	var noteHead;
@@ -600,6 +607,13 @@ function addRestToAbsElement(abselem, elem, duration, dot, isMultiVoice, stemdir
 	if (isMultiVoice) {
 		if (stemdir === "down") restpitch = 3;
 		if (stemdir === "up") restpitch = 11;
+	}
+	// Diminished staff: center rests on the middle ledger line (C4, position 9)
+	if (isDiminished) {
+		if (duration < 1)
+			restpitch = 9;
+		else
+			restpitch = 7; // whole rest hangs, so lower by 2
 	}
 	// There is special placement for the percussion staff. If there is one staff line, then move the rest position.
 	if (isSingleLineStaff) {
@@ -730,17 +744,19 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 		if (voice.isDiminished) {
 			var dimGroup = getDiminishedGroup(elem.pitches[p]);
 			if (dimGroup === 'cDim') {
-				if (zeroDuration) c = chartable.diminishedDown.nostem;
-				else c = chartable.diminishedDown[-durlog];
-				elem.pitches[p].diminishedColor = '#DDDD00';
-			} else if (dimGroup === 'bbDim') {
-				if (zeroDuration) c = chartable.note.nostem;
-				else c = chartable.note[-durlog];
-				elem.pitches[p].diminishedColor = '#DD0000';
-			} else {
 				if (zeroDuration) c = chartable.diminishedUp.nostem;
 				else c = chartable.diminishedUp[-durlog];
-				elem.pitches[p].diminishedColor = '#0000DD';
+				elem.pitches[p].diminishedColor = 'rgb(215 204 59)';
+			} else if (dimGroup === 'bbDim') {
+				if (zeroDuration) c = chartable.diminishedDown.nostem;
+				else c = chartable.diminishedDown[-durlog];
+				elem.pitches[p].diminishedColor = 'rgb(216 37 84)';
+				elem.pitches[p].diminishedPitchOffset = 0.07;
+			} else {
+				if (zeroDuration) c = chartable.note.nostem;
+				else c = chartable.note[-durlog];
+				elem.pitches[p].diminishedColor = 'rgb(77 162 210)';
+				elem.pitches[p].diminishedScale = 0.74;
 			}
 		} else if (elem.pitches[p].style) {
 			c = chartable[elem.pitches[p].style][-durlog];
@@ -812,19 +828,36 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 		var dx = (dir === "down" || abselem.heads.length === 0) ? 0 : abselem.heads[0].w;
 		var width = (dir === "down") ? 1 : -1;
 		// TODO-PER-HACK: One type of note head has a different placement of the stem. This should be more generically calculated:
-		if (noteHead && noteHead.c === 'noteheads.slash.quarter') {
-			if (dir === 'down')
-				p2 -= 1;
-			else
-				p1 += 1;
+		if (voice.isDiminished && abselem.heads.length > 0) {
+			var stemHead = (dir === 'up') ? abselem.heads[0] : abselem.heads[abselem.heads.length - 1];
+			if (stemHead && stemHead.c) {
+				var isDownTri = stemHead.c.indexOf('noteheads.triangle.down.') === 0;
+				var isUpTri = !isDownTri && stemHead.c.indexOf('noteheads.triangle.') === 0;
+				if (isUpTri) {
+					// Flat edge at bottom of up-triangle (0.74 pitch below center)
+					if (dir === 'up') p1 = elem.minpitch - 0.74;
+					else p2 = elem.maxpitch - 0.74;
+				} else if (isDownTri) {
+					// Flat edge at top of down-triangle (0.74 pitch above center)
+					if (dir === 'up') p1 = elem.minpitch + 0.74;
+					else p2 = elem.maxpitch + 0.74;
+				}
+			}
+		} else {
+			if (noteHead && noteHead.c === 'noteheads.slash.quarter') {
+				if (dir === 'down')
+					p2 -= 1;
+				else
+					p1 += 1;
+			}
+			if (noteHead && noteHead.c === 'noteheads.triangle.quarter') {
+				if (dir === 'down')
+					p2 -= 0.7;
+				else
+					p1 -= 1.2;
+			}
 		}
-		if (noteHead && noteHead.c === 'noteheads.triangle.quarter') {
-			if (dir === 'down')
-				p2 -= 0.7;
-			else
-				p1 -= 1.2;
-		}
-		abselem.addRight(new RelativeElement(null, dx, 0, p1, { "type": "stem", "pitch2": p2, linewidth: width, bottom: p1 - 1 }));
+		abselem.addRight(new RelativeElement(null, dx, 0, p1, { "type": "stem", "pitch2": p2, linewidth: width, bottom: p1 - 1 }), voice.isDiminished);
 		//var RelativeElement = function RelativeElement(c, dx, w, pitch, opt) {
 		min = Math.min(p1, p2);
 	}
@@ -876,7 +909,7 @@ AbstractEngraver.prototype.createNote = function (elem, nostem, isSingleLineStaf
 	if (elem.rest) {
 		if (this.measureLength === duration && elem.rest.type !== 'invisible' && elem.rest.type !== 'spacer' && elem.rest.type.indexOf('multimeasure') < 0)
 			elem.rest.type = 'whole'; // If the rest is exactly a measure, always use a whole rest
-		var ret1 = addRestToAbsElement(abselem, elem, duration, dot, voice.voicetotal > 1, this.stemdir, isSingleLineStaff, durlog, this.voiceScale);
+		var ret1 = addRestToAbsElement(abselem, elem, duration, dot, voice.voicetotal > 1, this.stemdir, isSingleLineStaff, durlog, this.voiceScale, voice.isDiminished);
 		notehead = ret1.noteHead;
 		roomtaken = ret1.roomTaken;
 		roomtakenright = ret1.roomTakenRight;
@@ -912,7 +945,22 @@ AbstractEngraver.prototype.createNote = function (elem, nostem, isSingleLineStaf
 	}
 
 	// ledger lines
-	ledgerLines(abselem, elem.minpitch, elem.maxpitch, elem.rest, symbolWidth, additionalLedgers, dir, -2, 1, voice.isDiminished);
+	var ledgerMin = elem.minpitch;
+	var ledgerMax = elem.maxpitch;
+	if (voice.isDiminished && elem.pitches) {
+		for (var lp = 0; lp < elem.pitches.length; lp++) {
+			var dimGrp = getDiminishedGroup(elem.pitches[lp]);
+			if (elem.pitches[lp].verticalPos === elem.minpitch && dimGrp === 'cDim') {
+				// Up-triangle: flat edge extends 1 below, need ledger line beneath
+				ledgerMin = elem.minpitch - 1;
+			}
+			if (elem.pitches[lp].verticalPos === elem.maxpitch && dimGrp === 'bbDim') {
+				// Down-triangle: flat edge extends 1 above, need ledger line above
+				ledgerMax = elem.maxpitch + 1;
+			}
+		}
+	}
+	ledgerLines(abselem, ledgerMin, ledgerMax, elem.rest, symbolWidth, additionalLedgers, dir, -2, 1, voice.isDiminished);
 
 	if (elem.chord !== undefined) {
 		var ret3 = addChord(this.getTextSize, abselem, elem, roomtaken, roomtakenright, symbolWidth, this.jazzchords, this.germanAlphabet);
@@ -1024,6 +1072,8 @@ AbstractEngraver.prototype.createBarLine = function (voice, elem, isFirstStaff) 
 	var abselem = new AbsoluteElement(elem, 0, 10, 'bar', this.tuneNumber);
 	var anchor = null; // place to attach part lines
 	var dx = 0;
+	var barBottom = voice.isDiminished ? 3 : 2;
+	var barTop = voice.isDiminished ? 15 : 10;
 
 	if (elem.barNumber) {
 		this.addMeasureNumber(elem.barNumber, abselem);
@@ -1054,12 +1104,12 @@ AbstractEngraver.prototype.createBarLine = function (voice, elem, isFirstStaff) 
 	}
 
 	if (firstthin) {
-		anchor = new RelativeElement(null, dx, 1, 2, { "type": "bar", "pitch2": 10, linewidth: 0.6 });
+		anchor = new RelativeElement(null, dx, 1, barBottom, { "type": "bar", "pitch2": barTop, linewidth: 0.6 });
 		abselem.addRight(anchor);
 	}
 
 	if (elem.type === "bar_invisible") {
-		anchor = new RelativeElement(null, dx, 1, 2, { "type": "none", "pitch2": 10, linewidth: 0.6 });
+		anchor = new RelativeElement(null, dx, 1, barBottom, { "type": "none", "pitch2": barTop, linewidth: 0.6 });
 		abselem.addRight(anchor);
 	}
 
@@ -1069,7 +1119,7 @@ AbstractEngraver.prototype.createBarLine = function (voice, elem, isFirstStaff) 
 
 	if (thick) {
 		dx += 4; //3 hardcoded;
-		anchor = new RelativeElement(null, dx, 4, 2, { "type": "bar", "pitch2": 10, linewidth: 4 });
+		anchor = new RelativeElement(null, dx, 4, barBottom, { "type": "bar", "pitch2": barTop, linewidth: 4 });
 		abselem.addRight(anchor);
 		dx += 5;
 	}
@@ -1086,7 +1136,7 @@ AbstractEngraver.prototype.createBarLine = function (voice, elem, isFirstStaff) 
 
 	if (secondthin) {
 		dx += 3; //3 hardcoded;
-		anchor = new RelativeElement(null, dx, 1, 2, { "type": "bar", "pitch2": 10, linewidth: 0.6 });
+		anchor = new RelativeElement(null, dx, 1, barBottom, { "type": "bar", "pitch2": barTop, linewidth: 0.6 });
 		abselem.addRight(anchor); // 3 is hardcoded
 	}
 

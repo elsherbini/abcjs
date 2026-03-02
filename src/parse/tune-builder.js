@@ -909,7 +909,7 @@ function pushLine(tune, hash) {
 
 // Diminished staff: maps diatonic pitch + accidental to chromatic verticalPos
 var diatonicToChromatic = [0, 2, 4, 5, 7, 9, 11]; // C=0, D=2, E=4, F=5, G=7, A=9, B=11
-var chromaticToVerticalPos = [0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8];
+var chromaticToVerticalPos = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7];
 
 function diminishedVerticalPos(pitch, accidental) {
 	var octave = Math.floor(pitch / 7);

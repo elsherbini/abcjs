@@ -105,7 +105,7 @@ AbsoluteElement.prototype.addHead = function (head) {
 	this.addRight(head);
 };
 
-AbsoluteElement.prototype.addRight = function (right) {
+AbsoluteElement.prototype.addRight = function (right, behind) {
 	// // used for clefs, note heads, bar lines, stems, key-signature accidentals, non-beamed flags, dots
 	// if (!(right.c && right.c.indexOf("clefs") >= 0) &&
 	// 	!(right.c && right.c.indexOf("noteheads") >= 0) &&
@@ -138,13 +138,13 @@ AbsoluteElement.prototype.addRight = function (right) {
 	// 	debugger;
 	if (right.dx + right.w > this.w) this.w = right.dx + right.w;
 	this.right[this.right.length] = right;
-	this._addChild(right);
+	this._addChild(right, behind);
 };
 
-AbsoluteElement.prototype.addFixed = function (elem) {
+AbsoluteElement.prototype.addFixed = function (elem, behind) {
 	// used for elements that can't move relative to other elements after they have been placed.
 	// used for ledger lines, bar numbers, debug msgs, clef, key sigs, time sigs
-	this._addChild(elem);
+	this._addChild(elem, behind);
 };
 
 AbsoluteElement.prototype.addFixedX = function (elem) {
@@ -176,7 +176,7 @@ AbsoluteElement.prototype.setLimit = function (member, child) {
 		this.specialY[member] = Math.max(this.specialY[member], child[member]);
 };
 
-AbsoluteElement.prototype._addChild = function (child) {
+AbsoluteElement.prototype._addChild = function (child, prepend) {
   //  console.log("Relative:",child);
   
   // MAE 30 Sep 2024 - To avoid extra space for chords if there is only a bar number on the clef
@@ -186,7 +186,11 @@ AbsoluteElement.prototype._addChild = function (child) {
   }
 
   child.parent = this;
-  this.children[this.children.length] = child;
+  if (prepend) {
+    this.children.unshift(child);
+  } else {
+    this.children[this.children.length] = child;
+  }
 
   if (okToPushTop){
     this.pushTop(child.top);

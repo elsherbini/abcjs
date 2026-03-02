@@ -64,7 +64,7 @@ var parseKeyVoice = {};
 		'alto-8': { clef: 'alto-8', pitch: 6, mid: -6 },
 		'alto^8': { clef: 'alto+8', pitch: 6, mid: -6 },
 		'alto_8': { clef: 'alto-8', pitch: 6, mid: -6 },
-		'diminished': { clef: 'diminished', pitch: 6, mid: 0 }
+		'diminished': { clef: 'diminished', pitch: 9, mid: 0 }
 	};
 
 	var calcMiddle = function(clef, oct) {

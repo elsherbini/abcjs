@@ -24,7 +24,7 @@ var createClef = function (elem, tuneNumber) {
 		case 'bass-8': clef = "clefs.F"; octave = -1; break;
 		case 'alto-8': clef = "clefs.C"; octave = -1; break;
 		case 'none': return null;
-		case 'diminished': return null;
+		case 'diminished': clef = "clefs.diminished"; break;
 		case 'perc': clef = "clefs.perc"; break;
 		default: abselem.addFixed(new RelativeElement("clef=" + elem.type, 0, 0, undefined, { type: "debug" }));
 	}
@@ -33,9 +33,15 @@ var createClef = function (elem, tuneNumber) {
 	// }
 	var dx = 5;
 	if (clef) {
-		var height = glyphs.symbolHeightInPitches(clef);
+		var clefScale = (clef === "clefs.diminished") ? 2 / 3 : 1;
+		var height = glyphs.symbolHeightInPitches(clef) * clefScale;
 		var ofs = clefOffsets(clef);
-		abselem.addRight(new RelativeElement(clef, dx, glyphs.getSymbolWidth(clef), elem.clefPos, { top: height + elem.clefPos + ofs, bottom: elem.clefPos + ofs }));
+		var clefOpts = { top: height + elem.clefPos + ofs, bottom: elem.clefPos + ofs };
+		if (clefScale !== 1) {
+			clefOpts.scalex = clefScale;
+			clefOpts.scaley = clefScale;
+		}
+		abselem.addRight(new RelativeElement(clef, dx, glyphs.getSymbolWidth(clef) * clefScale, elem.clefPos, clefOpts));
 
 		if (octave !== 0) {
 			var scale = 2 / 3;
@@ -66,6 +72,7 @@ function clefOffsets(clef) {
 		case "clefs.C": return -4;
 		case "clefs.F": return -4;
 		case "clefs.perc": return -2;
+		case "clefs.diminished": return -6;
 		default: return 0;
 	}
 }

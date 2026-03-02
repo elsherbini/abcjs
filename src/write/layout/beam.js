@@ -25,7 +25,7 @@ var layoutBeam = function (beam) {
 		beam.addBeam(beams[i]);
 
 	// Now that the main beam is defined, we know how tall the stems should be, so create them and attach them to the original notes.
-	createStems(beam.elems, beam.stemsUp, beam.beams[0], dy, beam.mainNote);
+	createStems(beam.elems, beam.stemsUp, beam.beams[0], dy, beam.mainNote, beam.isDiminished);
 };
 
 var getDurlog = function (duration) {
@@ -104,7 +104,7 @@ function calcYPos(average, numElements, stemHeight, asc, firstAveragePitch, last
 	return [startY, endY];
 }
 
-function createStems(elems, asc, beam, dy, mainNote) {
+function createStems(elems, asc, beam, dy, mainNote, isDiminished) {
 	for (var i = 0; i < elems.length; i++) {
 		var elem = elems[i];
 		if (elem.abcelem.rest)
@@ -126,7 +126,17 @@ function createStems(elems, asc, beam, dy, mainNote) {
 		if (isGrace)
 			dx += elem.heads[0].dx;
 		// TODO-PER-HACK: One type of note head has a different placement of the stem. This should be more generically calculated:
-		if (furthestHead.c === 'noteheads.slash.quarter') {
+		if (isDiminished && furthestHead.c) {
+			var isDownTri = furthestHead.c.indexOf('noteheads.triangle.down.') === 0;
+			var isUpTri = !isDownTri && furthestHead.c.indexOf('noteheads.triangle.') === 0;
+			if (isUpTri) {
+				// Flat edge at bottom of up-triangle (0.74 pitch below center)
+				pitch = furthestHead.pitch - 0.74;
+			} else if (isDownTri) {
+				// Flat edge at top of down-triangle (0.74 pitch above center)
+				pitch = furthestHead.pitch + 0.74;
+			}
+		} else if (furthestHead.c === 'noteheads.slash.quarter') {
 			if (asc)
 				pitch += 1;
 			else
@@ -138,7 +148,7 @@ function createStems(elems, asc, beam, dy, mainNote) {
 			linewidth: lineWidth
 		});
 		stem.setX(parent.x); // This is after the x coordinates were set, so we have to set it directly.
-		parent.addRight(stem);
+		parent.addRight(stem, isDiminished);
 	}
 
 }

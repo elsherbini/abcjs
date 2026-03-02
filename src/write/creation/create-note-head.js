@@ -16,6 +16,9 @@ var createNoteHead = function (abselem, c, pitchelem, options) {
 
 	// TODO scale the dot as well
 	var pitch = pitchelem.verticalPos;
+	if (pitchelem.diminishedPitchOffset) {
+		pitch += pitchelem.diminishedPitchOffset;
+	}
 	var notehead;
 	var accidentalshiftx = 0;
 	var newDotShiftX = 0;
@@ -30,11 +33,12 @@ var createNoteHead = function (abselem, c, pitchelem, options) {
 			var adjust = (pitchelem.printer_shift === "same") ? 1 : 0;
 			shiftheadx = (dir === "down") ? -glyphs.getSymbolWidth(c) * scale + adjust : glyphs.getSymbolWidth(c) * scale - adjust;
 		}
-		var opts = { scalex: scale, scaley: scale, thickness: glyphs.symbolHeightInPitches(c) * scale, name: pitchelem.name };
+		var noteScale = pitchelem.diminishedScale ? scale * pitchelem.diminishedScale : scale;
+		var opts = { scalex: noteScale, scaley: noteScale, thickness: glyphs.symbolHeightInPitches(c) * noteScale, name: pitchelem.name };
 		if (pitchelem.diminishedColor) {
 			opts.fill = pitchelem.diminishedColor;
 		}
-		notehead = new RelativeElement(c, shiftheadx, glyphs.getSymbolWidth(c) * scale, pitch, opts);
+		notehead = new RelativeElement(c, shiftheadx, glyphs.getSymbolWidth(c) * noteScale, pitch, opts);
 		notehead.stemDir = dir;
 		if (flag) {
 			var pos = pitch + ((dir === "down") ? -7 : 7) * scale;
