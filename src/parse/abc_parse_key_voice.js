@@ -64,7 +64,15 @@ var parseKeyVoice = {};
 		'alto-8': { clef: 'alto-8', pitch: 6, mid: -6 },
 		'alto^8': { clef: 'alto+8', pitch: 6, mid: -6 },
 		'alto_8': { clef: 'alto-8', pitch: 6, mid: -6 },
-		'diminished': { clef: 'diminished', pitch: 9, mid: 0 }
+		'diminished': { clef: 'diminished', pitch: 9, mid: 0 },
+		'diminished+8': { clef: 'diminished+8', pitch: 9, mid: 0 },
+		'diminished-8': { clef: 'diminished-8', pitch: 9, mid: 0 },
+		'diminished^8': { clef: 'diminished+8', pitch: 9, mid: 0 },
+		'diminished_8': { clef: 'diminished-8', pitch: 9, mid: 0 },
+		'diminished+16': { clef: 'diminished+16', pitch: 9, mid: 0 },
+		'diminished-16': { clef: 'diminished-16', pitch: 9, mid: 0 },
+		'diminished^16': { clef: 'diminished+16', pitch: 9, mid: 0 },
+		'diminished_16': { clef: 'diminished-16', pitch: 9, mid: 0 }
 	};
 
 	var calcMiddle = function(clef, oct) {
@@ -647,6 +655,15 @@ var parseKeyVoice = {};
 					case 'tenor,,':
 					case 'alto,,':
 					case 'none,,':
+					case 'diminished':
+					case 'diminished+8':
+					case 'diminished-8':
+					case 'diminished^8':
+					case 'diminished_8':
+					case 'diminished+16':
+					case 'diminished-16':
+					case 'diminished^16':
+					case 'diminished_16':
 // MAE 26 May 2025 Start of additional clefs
 					case 'treble+8':
 					case 'treble-8':

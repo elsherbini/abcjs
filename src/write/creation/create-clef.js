@@ -25,6 +25,10 @@ var createClef = function (elem, tuneNumber) {
 		case 'alto-8': clef = "clefs.C"; octave = -1; break;
 		case 'none': return null;
 		case 'diminished': clef = "clefs.diminished"; break;
+		case 'diminished+8': clef = "clefs.diminished"; octave = 1; break;
+		case 'diminished-8': clef = "clefs.diminished"; octave = -1; break;
+		case 'diminished+16': clef = "clefs.diminished"; octave = 2; break;
+		case 'diminished-16': clef = "clefs.diminished"; octave = -2; break;
 		case 'perc': clef = "clefs.perc"; break;
 		default: abselem.addFixed(new RelativeElement("clef=" + elem.type, 0, 0, undefined, { type: "debug" }));
 	}
@@ -45,7 +49,10 @@ var createClef = function (elem, tuneNumber) {
 
 		if (octave !== 0) {
 			var scale = 2 / 3;
-			var adjustspacing = (glyphs.getSymbolWidth(clef) - glyphs.getSymbolWidth("8") * scale) / 2;
+			var octaveLabel = (Math.abs(octave) >= 2) ? "16" : "8";
+			var labelWidth = (octaveLabel === "16") ? (glyphs.getSymbolWidth("1") + glyphs.getSymbolWidth("6")) : glyphs.getSymbolWidth("8");
+			var clefWidth = glyphs.getSymbolWidth(clef) * clefScale;
+			var adjustspacing = (clefWidth - labelWidth * scale) / 2;
 			var pitch = (octave > 0) ? abselem.top + 3 : abselem.bottom - 1;
 			var top = (octave > 0) ? abselem.top + 3 : abselem.bottom - 3;
 			var bottom = top - 2;
@@ -54,7 +61,7 @@ var createClef = function (elem, tuneNumber) {
 				pitch = 3;
 				adjustspacing = 0;
 			}
-			abselem.addRight(new RelativeElement("8", dx + adjustspacing, glyphs.getSymbolWidth("8") * scale, pitch, {
+			abselem.addRight(new RelativeElement(octaveLabel, dx + adjustspacing, labelWidth * scale, pitch, {
 				scalex: scale,
 				scaley: scale,
 				top: top,
