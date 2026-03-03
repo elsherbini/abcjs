@@ -116,13 +116,13 @@ glyphs['noteheads.triangle.dim.quarter'] = { d: [['M', 0, 2.88], ['l', 6.68, 0],
 // Up triangle - open (for half notes)
 glyphs['noteheads.triangle.half'] = { d: [['M', 0, 2.88], ['l', 6.68, 0], ['l', -3.34, -5.75], ['z'], ['m', 1.11, -0.74], ['l', 2.23, -4.27], ['l', 2.23, 4.27], ['z']], w: 6.68, h: 5.75 };
 // Up triangle - whole (for whole notes)
-glyphs['noteheads.triangle.whole'] = { d: [['M', 0, 2.88], ['l', 6.68, 0], ['l', -3.34, -5.75], ['z'], ['m', 1.11, -0.74], ['l', 2.23, -4.27], ['l', 2.23, 4.27], ['z']], w: 6.68, h: 5.75 };
+glyphs['noteheads.triangle.whole'] = { d: [['M', 0, 2.88], ['l', 10.0, 0], ['l', -5.0, -5.75], ['z'], ['m', 1.11, -0.74], ['l', 3.89, -4.27], ['l', 3.89, 4.27], ['z']], w: 10.0, h: 5.75 };
 // Down triangle - filled (for quarter notes and shorter)
 glyphs['noteheads.triangle.down.quarter'] = { d: [['M', 0, -2.88], ['l', 6.68, 0], ['l', -3.34, 5.75], ['z']], w: 6.68, h: 5.75 };
 // Down triangle - open (for half notes)
 glyphs['noteheads.triangle.down.half'] = { d: [['M', 0, -2.88], ['l', 6.68, 0], ['l', -3.34, 5.75], ['z'], ['m', 1.11, 0.74], ['l', 2.23, 4.27], ['l', 2.23, -4.27], ['z']], w: 6.68, h: 5.75 };
 // Down triangle - whole (for whole notes)
-glyphs['noteheads.triangle.down.whole'] = { d: [['M', 0, -2.88], ['l', 6.68, 0], ['l', -3.34, 5.75], ['z'], ['m', 1.11, 0.74], ['l', 2.23, 4.27], ['l', 2.23, -4.27], ['z']], w: 6.68, h: 5.75 };
+glyphs['noteheads.triangle.down.whole'] = { d: [['M', 0, -2.88], ['l', 10.0, 0], ['l', -5.0, 5.75], ['z'], ['m', 1.11, 0.74], ['l', 3.89, 4.27], ['l', 3.89, -4.27], ['z']], w: 10.0, h: 5.75 };
 
 var pathClone = function (pathArray) {
 	var res = [];
