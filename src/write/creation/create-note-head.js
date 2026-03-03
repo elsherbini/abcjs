@@ -28,12 +28,12 @@ var createNoteHead = function (abselem, c, pitchelem, options) {
 	else if (c === "") {
 		notehead = new RelativeElement(null, 0, 0, pitch);
 	} else {
+		var noteScale = pitchelem.diminishedScale ? scale * pitchelem.diminishedScale : scale;
 		var shiftheadx = headx;
 		if (pitchelem.printer_shift) {
 			var adjust = (pitchelem.printer_shift === "same") ? 1 : 0;
-			shiftheadx = (dir === "down") ? -glyphs.getSymbolWidth(c) * scale + adjust : glyphs.getSymbolWidth(c) * scale - adjust;
+			shiftheadx = (dir === "down") ? -glyphs.getSymbolWidth(c) * noteScale + adjust : glyphs.getSymbolWidth(c) * noteScale - adjust;
 		}
-		var noteScale = pitchelem.diminishedScale ? scale * pitchelem.diminishedScale : scale;
 		var opts = { scalex: noteScale, scaley: noteScale, thickness: glyphs.symbolHeightInPitches(c) * noteScale, name: pitchelem.name };
 		if (pitchelem.diminishedColor) {
 			opts.fill = pitchelem.diminishedColor;
