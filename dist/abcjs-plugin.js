@@ -4552,6 +4552,46 @@ var parseKeyVoice = {};
       clef: 'diminished',
       pitch: 9,
       mid: 0
+    },
+    'diminished+8': {
+      clef: 'diminished+8',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished-8': {
+      clef: 'diminished-8',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished^8': {
+      clef: 'diminished+8',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished_8': {
+      clef: 'diminished-8',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished+16': {
+      clef: 'diminished+16',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished-16': {
+      clef: 'diminished-16',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished^16': {
+      clef: 'diminished+16',
+      pitch: 9,
+      mid: 0
+    },
+    'diminished_16': {
+      clef: 'diminished-16',
+      pitch: 9,
+      mid: 0
     }
   };
   var calcMiddle = function calcMiddle(clef, oct) {
@@ -5194,6 +5234,15 @@ var parseKeyVoice = {};
           case 'tenor,,':
           case 'alto,,':
           case 'none,,':
+          case 'diminished':
+          case 'diminished+8':
+          case 'diminished-8':
+          case 'diminished^8':
+          case 'diminished_8':
+          case 'diminished+16':
+          case 'diminished-16':
+          case 'diminished^16':
+          case 'diminished_16':
           // MAE 26 May 2025 Start of additional clefs
           case 'treble+8':
           case 'treble-8':
@@ -9594,7 +9643,7 @@ function pushNote(self, tune, hp, voiceDefs, currentVoiceName) {
   var currStaff = tune.lines[tune.lineNum].staff[tune.staffNum];
   if (hp.pitches !== undefined) {
     var mid = currStaff.workingClef.verticalPos;
-    var isDiminished = currStaff.workingClef.type === 'diminished';
+    var isDiminished = currStaff.workingClef.type.indexOf('diminished') === 0;
     hp.pitches.forEach(function (p) {
       if (isDiminished) {
         p.verticalPos = diminishedVerticalPos(p.pitch, p.accidental);
@@ -9605,7 +9654,7 @@ function pushNote(self, tune, hp, voiceDefs, currentVoiceName) {
   }
   if (hp.gracenotes !== undefined) {
     var mid2 = currStaff.workingClef.verticalPos;
-    var isDiminished2 = currStaff.workingClef.type === 'diminished';
+    var isDiminished2 = currStaff.workingClef.type.indexOf('diminished') === 0;
     hp.gracenotes.forEach(function (p) {
       if (isDiminished2) {
         p.verticalPos = diminishedVerticalPos(p.pitch, p.accidental);
@@ -14811,7 +14860,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
       voice.headerPosition = 6 + staffgroup.getTextSize.baselineToCenter(voice.header, "voicefont", 'staff-extra voice-name', v, abcstaff.voices.length) / spacing.STEP;
     }
     if (abcstaff.clef && abcstaff.clef.type === "perc") voice.isPercussion = true;
-    if (abcstaff.clef && abcstaff.clef.type === "diminished") voice.isDiminished = true;
+    if (abcstaff.clef && abcstaff.clef.type.indexOf("diminished") === 0) voice.isDiminished = true;
     var clef = (!this.initialClef || l === 0) && createClef(abcstaff.clef, this.tuneNumber);
     if (clef) {
       if (v === 0 && abcstaff.barNumber) {
@@ -14822,7 +14871,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
     }
 
     var keySig = null;
-    if (!(abcstaff.clef && abcstaff.clef.type === 'diminished')) {
+    if (!(abcstaff.clef && abcstaff.clef.type.indexOf('diminished') === 0)) {
       keySig = createKeySignature(abcstaff.key, this.tuneNumber);
     }
     if (keySig) {
@@ -14841,7 +14890,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 
     if (voice.duplicate) voice.children = []; // we shouldn't reprint the above if we're reusing the same staff. We just created them to get the right spacing.
     var staffLines = abcstaff.clef.stafflines || abcstaff.clef.stafflines === 0 ? abcstaff.clef.stafflines : 5;
-    var isDiminishedStaff = abcstaff.clef && abcstaff.clef.type === 'diminished';
+    var isDiminishedStaff = abcstaff.clef && abcstaff.clef.type.indexOf('diminished') === 0;
     if (isDiminishedStaff) {
       staffLines = 'diminished';
     }
@@ -15454,7 +15503,8 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
       shouldExtendStem: !stemdir,
       printAccidentals: !voice.isPercussion && !voice.isDiminished
     });
-    symbolWidth = Math.max(glyphs.getSymbolWidth(c), symbolWidth);
+    var noteSymbolWidth = glyphs.getSymbolWidth(c) * (elem.pitches[p].diminishedScale || 1);
+    symbolWidth = Math.max(noteSymbolWidth, symbolWidth);
     abselem.extraw -= ret.extraLeft;
     noteHead = ret.notehead;
     if (noteHead) {
@@ -16112,6 +16162,22 @@ var createClef = function createClef(elem, tuneNumber) {
     case 'diminished':
       clef = "clefs.diminished";
       break;
+    case 'diminished+8':
+      clef = "clefs.diminished";
+      octave = 1;
+      break;
+    case 'diminished-8':
+      clef = "clefs.diminished";
+      octave = -1;
+      break;
+    case 'diminished+16':
+      clef = "clefs.diminished";
+      octave = 2;
+      break;
+    case 'diminished-16':
+      clef = "clefs.diminished";
+      octave = -2;
+      break;
     case 'perc':
       clef = "clefs.perc";
       break;
@@ -16139,7 +16205,10 @@ var createClef = function createClef(elem, tuneNumber) {
     abselem.addRight(new RelativeElement(clef, dx, glyphs.getSymbolWidth(clef) * clefScale, elem.clefPos, clefOpts));
     if (octave !== 0) {
       var scale = 2 / 3;
-      var adjustspacing = (glyphs.getSymbolWidth(clef) - glyphs.getSymbolWidth("8") * scale) / 2;
+      var octaveLabel = Math.abs(octave) >= 2 ? "16" : "8";
+      var labelWidth = octaveLabel === "16" ? glyphs.getSymbolWidth("1") + glyphs.getSymbolWidth("6") : glyphs.getSymbolWidth("8");
+      var clefWidth = glyphs.getSymbolWidth(clef) * clefScale;
+      var adjustspacing = (clefWidth - labelWidth * scale) / 2;
       var pitch = octave > 0 ? abselem.top + 3 : abselem.bottom - 1;
       var top = octave > 0 ? abselem.top + 3 : abselem.bottom - 3;
       var bottom = top - 2;
@@ -16148,7 +16217,7 @@ var createClef = function createClef(elem, tuneNumber) {
         pitch = 3;
         adjustspacing = 0;
       }
-      abselem.addRight(new RelativeElement("8", dx + adjustspacing, glyphs.getSymbolWidth("8") * scale, pitch, {
+      abselem.addRight(new RelativeElement(octaveLabel, dx + adjustspacing, labelWidth * scale, pitch, {
         scalex: scale,
         scaley: scale,
         top: top,
@@ -16271,12 +16340,12 @@ var createNoteHead = function createNoteHead(abselem, c, pitchelem, options) {
   }));else if (c === "") {
     notehead = new RelativeElement(null, 0, 0, pitch);
   } else {
+    var noteScale = pitchelem.diminishedScale ? scale * pitchelem.diminishedScale : scale;
     var shiftheadx = headx;
     if (pitchelem.printer_shift) {
       var adjust = pitchelem.printer_shift === "same" ? 1 : 0;
-      shiftheadx = dir === "down" ? -glyphs.getSymbolWidth(c) * scale + adjust : glyphs.getSymbolWidth(c) * scale - adjust;
+      shiftheadx = dir === "down" ? -glyphs.getSymbolWidth(c) * noteScale + adjust : glyphs.getSymbolWidth(c) * noteScale - adjust;
     }
-    var noteScale = pitchelem.diminishedScale ? scale * pitchelem.diminishedScale : scale;
     var opts = {
       scalex: noteScale,
       scaley: noteScale,
@@ -18987,8 +19056,8 @@ glyphs['noteheads.triangle.half'] = {
 };
 // Up triangle - whole (for whole notes)
 glyphs['noteheads.triangle.whole'] = {
-  d: [['M', 0, 2.88], ['l', 6.68, 0], ['l', -3.34, -5.75], ['z'], ['m', 1.11, -0.74], ['l', 2.23, -4.27], ['l', 2.23, 4.27], ['z']],
-  w: 6.68,
+  d: [['M', 0, 2.88], ['l', 10.0, 0], ['l', -5.0, -5.75], ['z'], ['m', 1.11, -0.74], ['l', 3.89, -4.27], ['l', 3.89, 4.27], ['z']],
+  w: 10.0,
   h: 5.75
 };
 // Down triangle - filled (for quarter notes and shorter)
@@ -19005,8 +19074,8 @@ glyphs['noteheads.triangle.down.half'] = {
 };
 // Down triangle - whole (for whole notes)
 glyphs['noteheads.triangle.down.whole'] = {
-  d: [['M', 0, -2.88], ['l', 6.68, 0], ['l', -3.34, 5.75], ['z'], ['m', 1.11, 0.74], ['l', 2.23, 4.27], ['l', 2.23, -4.27], ['z']],
-  w: 6.68,
+  d: [['M', 0, -2.88], ['l', 10.0, 0], ['l', -5.0, 5.75], ['z'], ['m', 1.11, 0.74], ['l', 3.89, 4.27], ['l', 3.89, -4.27], ['z']],
+  w: 10.0,
   h: 5.75
 };
 var pathClone = function pathClone(pathArray) {

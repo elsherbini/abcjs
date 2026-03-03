@@ -30,7 +30,7 @@ function getDiminishedGroup(pitchElem) {
 	var diatonicPitchClass = ((pitch % 7) + 7) % 7;
 	var semitone = diatonicToSemitone[diatonicPitchClass];
 
-	var acc = pitchElem.accidental;
+	var acc = pitchElem.effectiveAccidental || pitchElem.accidental;
 	if (acc === 'sharp' || acc === 'quartersharp') semitone += 1;
 	else if (acc === 'flat' || acc === 'quarterflat') semitone -= 1;
 	else if (acc === 'dblsharp') semitone += 2;
@@ -184,7 +184,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 		}
 		if (abcstaff.clef && abcstaff.clef.type === "perc")
 			voice.isPercussion = true;
-		if (abcstaff.clef && abcstaff.clef.type === "diminished")
+		if (abcstaff.clef && abcstaff.clef.type.indexOf("diminished") === 0)
 			voice.isDiminished = true;
 		var clef = (!this.initialClef || l === 0) && createClef(abcstaff.clef, this.tuneNumber);
 		if (clef) {
@@ -195,7 +195,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 			this.startlimitelem = clef; // limit ties here
 		}
 		var keySig = null;
-		if (!(abcstaff.clef && abcstaff.clef.type === 'diminished')) {
+		if (!(abcstaff.clef && abcstaff.clef.type.indexOf('diminished') === 0)) {
 			keySig = createKeySignature(abcstaff.key, this.tuneNumber);
 		}
 		if (keySig) {
@@ -214,7 +214,7 @@ AbstractEngraver.prototype.createABCStaff = function (staffgroup, abcstaff, temp
 		if (voice.duplicate)
 			voice.children = []; // we shouldn't reprint the above if we're reusing the same staff. We just created them to get the right spacing.
 		var staffLines = abcstaff.clef.stafflines || abcstaff.clef.stafflines === 0 ? abcstaff.clef.stafflines : 5;
-		var isDiminishedStaff = abcstaff.clef && abcstaff.clef.type === 'diminished';
+		var isDiminishedStaff = abcstaff.clef && abcstaff.clef.type.indexOf('diminished') === 0;
 		if (isDiminishedStaff) {
 			staffLines = 'diminished';
 		}
@@ -482,22 +482,28 @@ var sortPitch = function (elem) {
 	} while (!sorted);
 };
 
-var ledgerLines = function (abselem, minPitch, maxPitch, isRest, symbolWidth, additionalLedgers, dir, dx, scale, isDiminished) {
+var ledgerLines = function (abselem, minPitch, maxPitch, isRest, symbolWidth, additionalLedgers, dir, dx, scale, isDiminished, skipLedger) {
 	if (isDiminished) {
-		// Diminished staff: lines at odd positions. Staff lines at 3,5,7,11,13,15.
-		// Draw ledger lines at other odd positions as needed.
 		if (!isRest) {
+			skipLedger = skipLedger || {};
+
 			// Below bottom staff line (3): draw ledger lines at odd positions 1, -1, -3, ...
 			for (var di = 1; di >= minPitch; di -= 2) {
-				abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, di, { type: "ledger" }), true);
+				if (!skipLedger[di]) {
+					abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, di, { type: "ledger" }), true);
+				}
 			}
 			// Middle gap: draw ledger line at 9 if notes are in or span the gap
 			if ((minPitch <= 10 && minPitch >= 8) || (maxPitch >= 8 && maxPitch <= 10) || (minPitch <= 8 && maxPitch >= 10)) {
-				abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 9, { type: "ledger" }), true);
+				if (!skipLedger[9]) {
+					abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, 9, { type: "ledger" }), true);
+				}
 			}
 			// Above top staff line (15): draw ledger lines at odd positions 17, 19, 21, ...
 			for (var dj = 17; dj <= maxPitch; dj += 2) {
-				abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, dj, { type: "ledger" }), true);
+				if (!skipLedger[dj]) {
+					abselem.addFixed(new RelativeElement(null, dx, (symbolWidth + 4) * scale, dj, { type: "ledger" }), true);
+				}
 			}
 		}
 		return;
@@ -715,7 +721,9 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 	for (p = (dir === "down") ? elem.pitches.length - 2 : 1; (dir === "down") ? p >= 0 : p < elem.pitches.length; p = (dir === "down") ? p - 1 : p + 1) {
 		var prev = elem.pitches[(dir === "down") ? p + 1 : p - 1];
 		var curr = elem.pitches[p];
-		var delta = (dir === "down") ? prev.pitch - curr.pitch : curr.pitch - prev.pitch;
+		var delta = voice.isDiminished
+			? ((dir === "down") ? prev.verticalPos - curr.verticalPos : curr.verticalPos - prev.verticalPos)
+			: ((dir === "down") ? prev.pitch - curr.pitch : curr.pitch - prev.pitch);
 		if (delta <= 1 && !prev.printer_shift) {
 			curr.printer_shift = (delta) ? "different" : "same";
 			if (curr.verticalPos > 11 || curr.verticalPos < 1) {        // PER: add extra ledger line
@@ -802,7 +810,8 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 		var hasStem = !nostem && durlog <= -1;
 		var ret = createNoteHead(abselem, c, elem.pitches[p],
 			{ dir: dir, extrax: -roomTaken, flag: flag, dot: dot, dotshiftx: dotshiftx, scale: this.voiceScale, accidentalSlot: accidentalSlot, shouldExtendStem: !stemdir, printAccidentals: !voice.isPercussion && !voice.isDiminished });
-		symbolWidth = Math.max(glyphs.getSymbolWidth(c), symbolWidth);
+		var noteSymbolWidth = glyphs.getSymbolWidth(c) * (elem.pitches[p].diminishedScale || 1);
+		symbolWidth = Math.max(noteSymbolWidth, symbolWidth);
 		abselem.extraw -= ret.extraLeft;
 		noteHead = ret.notehead;
 		if (noteHead) {
@@ -947,20 +956,45 @@ AbstractEngraver.prototype.createNote = function (elem, nostem, isSingleLineStaf
 	// ledger lines
 	var ledgerMin = elem.minpitch;
 	var ledgerMax = elem.maxpitch;
+	var skipLedger = {};
+
 	if (voice.isDiminished && elem.pitches) {
+		// First pass: compute skip positions and range extensions
 		for (var lp = 0; lp < elem.pitches.length; lp++) {
 			var dimGrp = getDiminishedGroup(elem.pitches[lp]);
-			if (elem.pitches[lp].verticalPos === elem.minpitch && dimGrp === 'cDim') {
-				// Up-triangle: flat edge extends 1 below, need ledger line beneath
-				ledgerMin = elem.minpitch - 1;
+			var vPos = elem.pitches[lp].verticalPos;
+
+			if (dimGrp === 'cDim') {
+				// Up-triangle: skip ledger above tip, extend range below base
+				skipLedger[vPos + 1] = true;
+				if (vPos === elem.minpitch) {
+					ledgerMin = vPos - 1;
+				}
+			} else if (dimGrp === 'bbDim') {
+				// Down-triangle: skip ledger below tip, extend range above base
+				skipLedger[vPos - 1] = true;
+				if (vPos === elem.maxpitch) {
+					ledgerMax = vPos + 1;
+				}
 			}
-			if (elem.pitches[lp].verticalPos === elem.maxpitch && dimGrp === 'bbDim') {
-				// Down-triangle: flat edge extends 1 above, need ledger line above
-				ledgerMax = elem.maxpitch + 1;
+		}
+
+		// Second pass: need overrides skip (for chords where another note needs the ledger)
+		for (var lp2 = 0; lp2 < elem.pitches.length; lp2++) {
+			var dimGrp2 = getDiminishedGroup(elem.pitches[lp2]);
+			var vPos2 = elem.pitches[lp2].verticalPos;
+
+			if (dimGrp2 === 'cDim') {
+				delete skipLedger[vPos2 - 1]; // Base needs ledger below
+			} else if (dimGrp2 === 'bbDim') {
+				delete skipLedger[vPos2 + 1]; // Base needs ledger above
+			} else {
+				delete skipLedger[vPos2]; // Blue oval needs ledger at its position
 			}
 		}
 	}
-	ledgerLines(abselem, ledgerMin, ledgerMax, elem.rest, symbolWidth, additionalLedgers, dir, -2, 1, voice.isDiminished);
+
+	ledgerLines(abselem, ledgerMin, ledgerMax, elem.rest, symbolWidth, additionalLedgers, dir, -2, 1, voice.isDiminished, skipLedger);
 
 	if (elem.chord !== undefined) {
 		var ret3 = addChord(this.getTextSize, abselem, elem, roomtaken, roomtakenright, symbolWidth, this.jazzchords, this.germanAlphabet);
