@@ -107,10 +107,10 @@ function getInitialStaffSize(staffGroup) {
 	return returned;
 }
 
-function buildRelativeTabNote(plugin, relX, def, curNote, isGrace) {
+function buildRelativeTabNote(plugin, relX, def, curNote, isGrace, diminishedColor) {
 	var strNote = curNote.num;
 	if (curNote.note.quarter != null) {
-		// add tab quarter => needs to string conversion then 
+		// add tab quarter => needs to string conversion then
 		strNote = strNote.toString();
 		strNote += curNote.note.quarter;
 	}
@@ -119,6 +119,9 @@ function buildRelativeTabNote(plugin, relX, def, curNote, isGrace) {
 	var opt = {
 		type: 'tabNumber'
 	};
+	if (diminishedColor) {
+		opt.fill = diminishedColor;
+	}
 	var tabNoteRelative = new RelativeElement(
 		strNote, 0, 0, pitch + 0.3, opt);
 	tabNoteRelative.x = relX;
@@ -277,17 +280,19 @@ TabAbsoluteElements.prototype.build = function (plugin,
 				defNote = { el_type: "note", startChar: absChild.abcelem.startChar, endChar: absChild.abcelem.endChar, notes: [] };
 				for (var ll = 0; ll < tabPos.notes.length; ll++) {
 					var curNote = tabPos.notes[ll];
+					var dimColor = pitches && pitches[ll] ? pitches[ll].diminishedColor : null;
 					if (curNote.graces) {
 						for (var mm = 0; mm < curNote.graces.length; mm++) {
 							var defGrace = { el_type: "note", startChar: absChild.abcelem.startChar, endChar: absChild.abcelem.endChar, notes: [], grace: true };
 							var graceX = getXGrace(absChild, mm);
 							var curGrace = curNote.graces[mm];
-							var tabGraceRelative = buildRelativeTabNote(plugin, graceX, defGrace, curGrace, true);
+							var graceColor = graceNotes && graceNotes[mm] ? graceNotes[mm].diminishedColor : null;
+							var tabGraceRelative = buildRelativeTabNote(plugin, graceX, defGrace, curGrace, true, graceColor);
 							abs.children.push(tabGraceRelative);
 							tabVoice.push(defGrace);
 						}
 					}
-					var tabNoteRelative = buildRelativeTabNote(plugin, abs.x + absChild.heads[ll].dx, defNote, curNote, false);
+					var tabNoteRelative = buildRelativeTabNote(plugin, abs.x + absChild.heads[ll].dx, defNote, curNote, false, dimColor);
 					abs.children.push(tabNoteRelative);
 				}
 				if (defNote.notes.length > 0) {

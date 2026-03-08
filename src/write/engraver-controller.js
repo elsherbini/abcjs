@@ -72,6 +72,7 @@ var EngraverController = function (paper, params) {
 		this.accentAbove = params.accentAbove;
 	if (params.germanAlphabet)
 		this.germanAlphabet = params.germanAlphabet;
+	this.diminishedColors = params.diminishedColors || 'metaharmony';
 	if (params.lineThickness)
 		this.lineThickness = params.lineThickness;
 	if (params.chordGrid)
@@ -200,7 +201,8 @@ EngraverController.prototype.setupTune = function (abcTune, tuneNumber) {
 		jazzchords: this.jazzchords,
 		timeBasedLayout: this.timeBasedLayout,
 		accentAbove: this.accentAbove,
-		germanAlphabet: this.germanAlphabet
+		germanAlphabet: this.germanAlphabet,
+		diminishedColors: this.diminishedColors
 	});
 	this.engraver.setStemHeight(this.renderer.spacing.stemHeight);
 	this.engraver.measureLength = abcTune.getMeterFraction().num / abcTune.getMeterFraction().den;

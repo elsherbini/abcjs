@@ -49,6 +49,12 @@ function getDiminishedGroup(pitchElem) {
 	return 'bDim';
 }
 
+var diminishedColorMap = {
+	metaharmony: { cDim: 'rgb(215 204 59)', bbDim: 'rgb(216 37 84)', bDim: 'rgb(77 162 210)' },
+	elements: { cDim: 'rgb(59 179 75)', bbDim: 'rgb(77 162 210)', bDim: 'rgb(216 37 84)' },
+	bw: { cDim: null, bbDim: null, bDim: null }
+};
+
 var getDuration = function (elem) {
 	var d = 0;
 	if (elem.duration) {
@@ -84,6 +90,7 @@ var AbstractEngraver = function (getTextSize, tuneNumber, options) {
 	this.jazzchords = !!options.jazzchords
 	this.accentAbove = !!options.accentAbove
 	this.germanAlphabet = !!options.germanAlphabet
+	this.diminishedColors = options.diminishedColors || 'metaharmony';
 	this.reset();
 };
 
@@ -555,7 +562,24 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 
 		flag = (gracebeam) ? null : chartable.uflags[(isBagpipes) ? 5 : 3];
 		var accidentalSlot = [];
-		var ret = createNoteHead(abselem, "noteheads.quarter", elem.gracenotes[i],
+		var graceC = "noteheads.quarter";
+		if (voice.isDiminished) {
+			var graceDimGroup = getDiminishedGroup(elem.gracenotes[i]);
+			var graceColors = diminishedColorMap[this.diminishedColors] || diminishedColorMap.metaharmony;
+			if (graceDimGroup === 'cDim') {
+				graceC = chartable.diminishedUp[2];
+				if (graceColors.cDim) elem.gracenotes[i].diminishedColor = graceColors.cDim;
+			} else if (graceDimGroup === 'bbDim') {
+				graceC = chartable.diminishedDown[2];
+				if (graceColors.bbDim) elem.gracenotes[i].diminishedColor = graceColors.bbDim;
+				elem.gracenotes[i].diminishedPitchOffset = 0.07;
+			} else {
+				graceC = chartable.note[2];
+				if (graceColors.bDim) elem.gracenotes[i].diminishedColor = graceColors.bDim;
+				elem.gracenotes[i].diminishedScale = 0.74;
+			}
+		}
+		var ret = createNoteHead(abselem, graceC, elem.gracenotes[i],
 			{ dir: "up", headx: -graceoffsets[i], extrax: -graceoffsets[i], flag: flag, scale: gracescale * this.voiceScale, accidentalSlot: accidentalSlot });
 		ret.notehead.highestVert = ret.notehead.pitch + stemHeight;
 		var grace = ret.notehead;
@@ -583,7 +607,17 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 			var width = -0.6;
 			abselem.addExtra(new RelativeElement(null, dx, 0, p1, { "type": "stem", "pitch2": p2, linewidth: width }));
 		}
-		ledgerLines(abselem, gracepitch, gracepitch, false, glyphs.getSymbolWidth("noteheads.quarter"), [], true, grace.dx - 1, 0.6, voice.isDiminished);
+		var graceSkipLedger = {};
+		if (voice.isDiminished) {
+			var graceDimGrp = getDiminishedGroup(elem.gracenotes[i]);
+			if (graceDimGrp === 'cDim' && gracepitch >= 8) {
+				graceSkipLedger[gracepitch + 1] = true;
+			} else if (graceDimGrp === 'bbDim' && gracepitch <= 10) {
+				graceSkipLedger[gracepitch - 1] = true;
+			}
+		}
+		var graceSymbolWidth = glyphs.getSymbolWidth(graceC) * (elem.gracenotes[i].diminishedScale || 1);
+		ledgerLines(abselem, gracepitch, gracepitch, false, graceSymbolWidth, [], true, grace.dx - 1, 0.6, voice.isDiminished, graceSkipLedger);
 
 		// if this is the first grace note, we might want to start a slur.
 		// there is a slur if graceSlurs is specifically set.
@@ -592,7 +626,7 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 		var isInvisibleRest = elem.rest && (elem.rest.type === "spacer" || elem.rest.type === "invisible");
 		if (i === 0 && !isBagpipes && this.graceSlurs && !isInvisibleRest) {
 			// This is the overall slur that is under the grace notes.
-			voice.addOther(new TieElem({ anchor1: grace, anchor2: notehead, isGrace: true }));
+			voice.addOther(new TieElem({ anchor1: grace, anchor2: notehead, isGrace: true, isDiminished: voice.isDiminished }));
 		}
 	}
 
@@ -751,19 +785,20 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 		var c;
 		if (voice.isDiminished) {
 			var dimGroup = getDiminishedGroup(elem.pitches[p]);
+			var noteColors = diminishedColorMap[this.diminishedColors] || diminishedColorMap.metaharmony;
 			if (dimGroup === 'cDim') {
 				if (zeroDuration) c = chartable.diminishedUp.nostem;
 				else c = chartable.diminishedUp[-durlog];
-				elem.pitches[p].diminishedColor = 'rgb(215 204 59)';
+				if (noteColors.cDim) elem.pitches[p].diminishedColor = noteColors.cDim;
 			} else if (dimGroup === 'bbDim') {
 				if (zeroDuration) c = chartable.diminishedDown.nostem;
 				else c = chartable.diminishedDown[-durlog];
-				elem.pitches[p].diminishedColor = 'rgb(216 37 84)';
+				if (noteColors.bbDim) elem.pitches[p].diminishedColor = noteColors.bbDim;
 				elem.pitches[p].diminishedPitchOffset = 0.07;
 			} else {
 				if (zeroDuration) c = chartable.note.nostem;
 				else c = chartable.note[-durlog];
-				elem.pitches[p].diminishedColor = 'rgb(77 162 210)';
+				if (noteColors.bDim) elem.pitches[p].diminishedColor = noteColors.bDim;
 				elem.pitches[p].diminishedScale = 0.74;
 			}
 		} else if (elem.pitches[p].style) {
@@ -965,14 +1000,18 @@ AbstractEngraver.prototype.createNote = function (elem, nostem, isSingleLineStaf
 			var vPos = elem.pitches[lp].verticalPos;
 
 			if (dimGrp === 'cDim') {
-				// Up-triangle: skip ledger above tip, extend range below base
-				skipLedger[vPos + 1] = true;
+				// Up-triangle: skip ledger above tip only when pointing away from staff (vPos >= 8)
+				if (vPos >= 8) {
+					skipLedger[vPos + 1] = true;
+				}
 				if (vPos === elem.minpitch) {
 					ledgerMin = vPos - 1;
 				}
 			} else if (dimGrp === 'bbDim') {
-				// Down-triangle: skip ledger below tip, extend range above base
-				skipLedger[vPos - 1] = true;
+				// Down-triangle: skip ledger below tip only when pointing away from staff (vPos <= 10)
+				if (vPos <= 10) {
+					skipLedger[vPos - 1] = true;
+				}
 				if (vPos === elem.maxpitch) {
 					ledgerMax = vPos + 1;
 				}

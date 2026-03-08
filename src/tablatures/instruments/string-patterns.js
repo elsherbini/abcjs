@@ -52,39 +52,64 @@ function buildSecond(first) {
 }
 
 function sameString(self, chord) {
-	for (var jjjj = 0; jjjj < chord.length - 1; jjjj++) {
-		var curPos = chord[jjjj];
-		var nextPos = chord[jjjj + 1];
-		if (curPos.str == nextPos.str) {
-			// same String
-			// => change lower pos 
-			if (curPos.str == self.strings.length - 1) {
-				// Invalid tab Chord position for instrument
-				curPos.num = "?";
-				nextPos.num = "?";
-				return;
+	var hasConflict = true;
+	var maxPasses = chord.length;
+	while (hasConflict && maxPasses > 0) {
+		hasConflict = false;
+		maxPasses--;
+		for (var jjjj = 0; jjjj < chord.length - 1; jjjj++) {
+			var curPos = chord[jjjj];
+			var nextPos = chord[jjjj + 1];
+			if (curPos.str == nextPos.str) {
+				// both pinned to same string — user's choice, skip
+				if (curPos.pinned && nextPos.pinned) continue;
+				hasConflict = true;
+				// same String
+				// => change the non-pinned note (or lower fret if neither pinned)
+				if (curPos.str == self.strings.length - 1) {
+					// Invalid tab Chord position for instrument
+					if (!curPos.pinned) curPos.num = "?";
+					if (!nextPos.pinned) nextPos.num = "?";
+					return;
+				}
+				// decide which note to move: never move a pinned note
+				var moveCur, moveNext;
+				if (curPos.pinned) {
+					moveCur = false; moveNext = true;
+				} else if (nextPos.pinned) {
+					moveCur = true; moveNext = false;
+				} else {
+					// neither pinned — move the one with lower fret number
+					moveCur = nextPos.num < curPos.num ? false : true;
+					moveNext = !moveCur;
+				}
+				if (moveNext) {
+					nextPos.str++;
+					nextPos = noteToNumber(self,
+						nextPos.note,
+						nextPos.str,
+						self.secondPos,
+						self.strings[nextPos.str].length
+					);
+					if (!nextPos) {
+						nextPos = { num: "?", str: chord[jjjj + 1].str + 1, note: chord[jjjj + 1].note };
+					}
+				} else {
+					curPos.str++;
+					curPos = noteToNumber(self,
+						curPos.note,
+						curPos.str,
+						self.secondPos,
+						self.strings[curPos.str].length
+					);
+					if (!curPos) {
+						curPos = { num: "?", str: chord[jjjj].str + 1, note: chord[jjjj].note };
+					}
+				}
+				// update table
+				chord[jjjj] = curPos;
+				chord[jjjj + 1] = nextPos;
 			}
-			// change lower pitch on lowest string
-			if (nextPos.num < curPos.num) {
-				nextPos.str++;
-				nextPos = noteToNumber(self,
-					nextPos.note,
-					nextPos.str,
-					self.secondPos,
-					self.strings[nextPos.str].length
-				);
-			} else {
-				curPos.str++;
-				curPos = noteToNumber(self,
-					curPos.note,
-					curPos.str,
-					self.secondPos,
-					self.strings[curPos.str].length
-				);
-			}
-			// update table
-			chord[jjjj] = curPos;
-			chord[jjjj + 1] = nextPos;
 		}
 	}
 	return null;
@@ -97,7 +122,13 @@ function handleChordNotes(self, notes) {
 			continue;
 		var note = new TabNote(notes[iiii].name, self.clefTranspose);
 		note.checkKeyAccidentals(self.accidentals, self.measureAccidentals)
-		var curPos = toNumber(self, note);
+		var curPos;
+		if (notes[iiii].tabString) {
+			curPos = pinnedToNumber(self, note, notes[iiii].tabString);
+			curPos.pinned = true;
+		} else {
+			curPos = toNumber(self, note);
+		}
 		retNotes.push(curPos);
 	}
 	sameString(self, retNotes);
@@ -131,6 +162,18 @@ function noteToNumber(self, note, stringNumber, secondPosition, firstSize) {
 		};
 	}
 	return null;
+}
+
+function pinnedToNumber(self, note, tabString) {
+	var str = tabString - 1; // 1-based (user) to 0-based (internal)
+	if (str < 0 || str >= self.stringPitches.length) {
+		return { num: "?", str: Math.max(0, Math.min(str, self.stringPitches.length - 1)), note: note };
+	}
+	var num = note.pitch + note.pitchAltered - self.stringPitches[self.stringPitches.length - 1 - str];
+	if (num < 0) {
+		return { num: "?", str: str, note: note };
+	}
+	return { num: Math.round(num), str: str, note: note };
 }
 
 function toNumber(self, note) {
@@ -201,7 +244,11 @@ StringPatterns.prototype.notesToNumber = function (notes, graces) {
 			if (!notes[0].endTie) {
 				note = new TabNote(notes[0].name, this.clefTranspose);
 				note.checkKeyAccidentals(this.accidentals, this.measureAccidentals)
-				number = toNumber(this, note);
+				if (notes[0].tabString) {
+					number = pinnedToNumber(this, note, notes[0].tabString);
+				} else {
+					number = toNumber(this, note);
+				}
 				if (number) {
 					retNotes.push(number);
 				} else {

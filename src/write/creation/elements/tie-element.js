@@ -7,6 +7,8 @@ var TieElem = function TieElem(options) {
 	this.anchor2 = options.anchor2; // must have a .x and a .pitch property or be null (means ends at the end of the line)
 	if (options.isGrace)
 		this.isGrace = true;
+	if (options.isDiminished)
+		this.isDiminished = true;
 	if (options.fixedY)
 		this.fixedY = true;
 	if (options.stemDir)
@@ -131,8 +133,11 @@ TieElem.prototype.calcX = function (lineStartX, lineEndX) {
 	if (!this.anchor1 && this.dotted)
 		this.startX -= 3; // The arc needs to be long enough to tell that it is dotted.
 
-	if (this.anchor2)
+	if (this.anchor2) {
 		this.endX = this.anchor2.x; // The normal case where there is a starting element to attach to.
+		if (this.isGrace && this.isDiminished)
+			this.endX -= 3; // diminished grace note tie: shorten right side
+	}
 	else if (this.endLimitX)
 		this.endX = this.endLimitX.x; // if there is no start element, but there is a repeat mark before the start of the line.
 	else

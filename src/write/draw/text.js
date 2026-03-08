@@ -36,6 +36,9 @@ function renderText(renderer, params, alreadyInGroup) {
 	if (params.cursor) {
 		hash.attr.cursor = params.cursor;
 	}
+	if (params.fill) {
+		hash.attr.fill = params.fill;
+	}
 
 	// MAE 9 May 2025 for free text blocks
 	var text;

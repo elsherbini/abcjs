@@ -195,7 +195,13 @@ function tabRenderer(plugin, renderer, line, staffIndex) {
 	var padd = 3;
 	var prevIndex = staffIndex;
 	var previousStaff = staffGroup.staffs[prevIndex];
-	var tabTop = tabSize + padd - previousStaff.bottom - lyricsHeight;
+	var bottom = previousStaff.bottom;
+	if (previousStaff.lines === 'diminished') {
+		// The diminished staff's 8-position-per-octave pitch mapping creates
+		// more negative bottom values than treble. Normalize to match treble spacing.
+		bottom = Math.max(bottom, 0);
+	}
+	var tabTop = tabSize + padd - bottom - lyricsHeight;
 	if (previousStaff.isTabStaff) {
 		tabTop = previousStaff.top;
 	}

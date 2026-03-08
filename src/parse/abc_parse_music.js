@@ -507,6 +507,7 @@ MusicParser.prototype.parseMusic = function(line) {
 							if (el.dottedSlur !== undefined) el.pitches[0].dottedSlur = true;
 							if (core.startTie !== undefined) el.pitches[0].startTie = core.startTie;
 							if (el.startTie !== undefined) el.pitches[0].startTie = el.startTie;
+							if (core.tabString !== undefined) el.pitches[0].tabString = core.tabString;
 						} else {
 							el.rest = core.rest;
 							if (core.rest.type === 'multimeasure' && isFirstVoice())
@@ -1144,6 +1145,17 @@ var getCoreNote = function(line, index, el, canHaveBrokenRhythm) {
 			case '\'':
 				if (state === 'octave') {el.pitch += 7; el.name += "'";  }
 				else if (isComplete(state)) {el.endChar = index;return el;}
+				else return null;
+				break;
+			case '@':
+				if (state === 'octave' || state === 'duration') {
+					index++;
+					if (index < line.length && line[index] >= '1' && line[index] <= '9') {
+						el.tabString = parseInt(line[index], 10);
+					} else {
+						index--; // no valid digit found, back up
+					}
+				} else if (isComplete(state)) {el.endChar = index;return el;}
 				else return null;
 				break;
 			case 'x':
