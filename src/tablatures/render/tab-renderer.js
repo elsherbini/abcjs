@@ -211,6 +211,7 @@ function tabRenderer(plugin, renderer, line, staffIndex) {
 		specialY: initSpecialY(),
 		lines: plugin.nbLines,
 		linePitch: plugin.linePitch,
+		tuning: plugin.tuning,
 		dy: 0.15,
 		top: tabTop,
 	};
@@ -231,7 +232,7 @@ function tabRenderer(plugin, renderer, line, staffIndex) {
 	for (var ii = 0; ii < nbVoices; ii++) {
 		var tabVoice = new VoiceElement(0, 0);
 		if (ii > 0) tabVoice.duplicate = true;
-		var nameHeight = buildTabName(plugin, renderer, tabVoice) / spacing.STEP;
+		var nameHeight = 0;
 		nameHeight = Math.max(nameHeight, 1) // If there is no label for the tab line, then there needs to be a little padding
 		// This was pushing down the top staff by the tab label height
 		//staffGroup.staffs[staffIndex].top += nameHeight;

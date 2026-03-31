@@ -23,7 +23,7 @@ Plugin.prototype.init = function (abcTune, tuneNumber, params, tabSettings) {
 	this.tabSymbolOffset = tabSettings.tabSymbolOffset;
 	this.capo = params.capo;
 	this.transpose = params.visualTranspose;
-	this.hideTabSymbol = params.hideTabSymbol;
+	this.hideTabSymbol = true;
 	this.tablature = new StringTablature(this.nbLines, this.linePitch);
 	var tuning = params.tuning;
 	if (!tuning) {

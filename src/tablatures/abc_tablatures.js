@@ -19,7 +19,7 @@ var pluginTab = {
 	'mandolin': { name: 'StringTab', defaultTuning: ['G,', 'D', 'A', 'e'], isTabBig: false, tabSymbolOffset: 0 },
 	'guitar': { name: 'StringTab', defaultTuning: ['E,', 'A,', 'D', 'G', 'B', 'e'], isTabBig: true, tabSymbolOffset: 0 },
 	'fiveString': { name: 'StringTab', defaultTuning: ['C,', 'G,', 'D', 'A', 'e'], isTabBig: false, tabSymbolOffset: -.95 },
-	'minorthirds': { name: 'StringTab', defaultTuning: ['E,,', 'G,,', '_B,,', '_D,', 'E,', 'G,', '_B,', '_D'], isTabBig: true, tabSymbolOffset: 0 },
+	'minorthirds': { name: 'StringTab', defaultTuning: ['E,', 'G,', '_B,', '_D', 'E', 'G', '_B', '_d'], isTabBig: true, tabSymbolOffset: 0 },
 };
 
 var abcTablatures = {

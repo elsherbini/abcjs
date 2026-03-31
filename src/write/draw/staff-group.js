@@ -5,6 +5,8 @@ var printStaff = require('./staff');
 var printDebugBox = require('./debug-box');
 var printStem = require('./print-stem');
 var nonMusic = require('./non-music');
+var renderText = require('./text');
+var tuningToDisplayNames = require('../../tablatures/instruments/string-patterns').tuningToDisplayNames;
 
 function drawStaffGroup(renderer, params, selectables, lineNumber) {
 	// We enter this method with renderer.y pointing to the topmost coordinate that we're allowed to draw.
@@ -103,6 +105,66 @@ function drawStaffGroup(renderer, params, selectables, lineNumber) {
 					bartop = staff.hasStaff.topLine;
 					params.voices[i].barto = true;
 					params.voices[i].topLine = topLine;
+				}
+
+				// Draw string name labels to the left of tab staff
+				if (staff.isTabStaff && staff.tuning) {
+					var displayNames = tuningToDisplayNames(staff.tuning);
+					var numStrings = staff.lines;
+					var lp = staff.linePitch || 2;
+					var labelFontSize = 7;
+					var labelGap = 3;
+					var labelFont = {
+						face: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+						size: labelFontSize,
+						weight: 'normal',
+						style: 'normal',
+						decoration: 'none'
+					};
+					var maxLabelWidth = 0;
+
+					// Measure widest label
+					for (var si = 0; si < numStrings; si++) {
+						var labelText = displayNames[si] || '';
+						var measuredSize = renderer.controller.getTextSize.calc(labelText, labelFont, 'text tab-label');
+						if (measuredSize.width > maxLabelWidth) maxLabelWidth = measuredSize.width;
+					}
+
+					// Build dim object for renderText
+					var labelDim = renderer.controller.getFontAndAttr.calc('annotationfont', 'text tab-label');
+					labelDim.font = {
+						face: labelFont.face,
+						size: labelFontSize,
+						weight: labelFont.weight,
+						style: labelFont.style,
+						decoration: labelFont.decoration
+					};
+					labelDim.attr['font-size'] = labelFontSize;
+					labelDim.attr['font-family'] = 'Helvetica Neue, Helvetica, Arial, sans-serif';
+					labelDim.attr['font-weight'] = 'normal';
+
+					// Draw each label centered on its string line
+					// tuning[0] is lowest string = bottom line, tuning[last] is highest = top line
+					for (var sj = 0; sj < numStrings; sj++) {
+						var labelText2 = displayNames[sj] || '';
+						var stringPitch = (sj + 1) * lp;
+						var stringY = renderer.calcY(stringPitch);
+						var labelX = params.startx - maxLabelWidth - 1;
+
+						renderText(renderer, {
+							x: labelX,
+							y: stringY + labelFontSize / 3,
+							text: labelText2,
+							dim: JSON.parse(JSON.stringify(labelDim)),
+							klass: 'text tab-label',
+							anchor: 'start',
+							centerVertically: true
+						});
+					}
+
+					// Draw vertical separator line to the right of the barline
+					var sepX = params.startx + 2;
+					printStem(renderer, sepX, 0.6, staff.topLine, staff.bottomLine, null);
 				}
 
 			}

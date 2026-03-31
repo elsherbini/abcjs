@@ -365,4 +365,17 @@ function StringPatterns(plugin) {
 
 
 
+function tuningToDisplayNames(tuning) {
+	var names = [];
+	for (var i = 0; i < tuning.length; i++) {
+		var str = tuning[i].replace(/[,']/g, '');
+		if (str[0] === '_') names.push(str[1].toUpperCase() + 'b');
+		else if (str[0] === '^') names.push(str[1].toUpperCase() + '#');
+		else if (str[0] === '=') names.push(str[1].toUpperCase());
+		else names.push(str[0].toUpperCase());
+	}
+	return names;
+}
+
 module.exports = StringPatterns;
+module.exports.tuningToDisplayNames = tuningToDisplayNames;
