@@ -24,6 +24,7 @@ var createClef = function (elem, tuneNumber) {
 		case 'bass-8': clef = "clefs.F"; octave = -1; break;
 		case 'alto-8': clef = "clefs.C"; octave = -1; break;
 		case 'none': return null;
+		case 'TAB': return null;
 		case 'diminished': clef = "clefs.diminished"; break;
 		case 'diminished+8': clef = "clefs.diminished"; octave = 1; break;
 		case 'diminished-8': clef = "clefs.diminished"; octave = -1; break;
