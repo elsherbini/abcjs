@@ -52,7 +52,7 @@ function getDiminishedGroup(pitchElem) {
 var diminishedColorMap = {
 	metaharmony: { cDim: 'rgb(215 204 59)', bbDim: 'rgb(216 37 84)', bDim: 'rgb(77 162 210)' },
 	elements: { cDim: 'rgb(59 179 75)', bbDim: 'rgb(77 162 210)', bDim: 'rgb(216 37 84)' },
-	bw: { cDim: null, bbDim: null, bDim: null }
+	bw: { cDim: 'currentColor', bbDim: 'currentColor', bDim: 'currentColor' }
 };
 
 var getDuration = function (elem) {
