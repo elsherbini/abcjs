@@ -18,10 +18,7 @@ function drawRelativeElement(renderer, params, bartop) {
 				klass: renderer.controller.classes.generate(klass),
 				name: params.name
 			};
-			if (params.fill) {
-				symbolOpts.fill = params.fill;
-				symbolOpts.stroke = params.fill;
-			}
+			if (params.fill) symbolOpts.fill = params.fill; // fill only: a stroke would fatten the glyph
 			params.graphelem = printSymbol(renderer, params.x, params.pitch, params.c, symbolOpts);
 			break;
 		case "debug":
