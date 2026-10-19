@@ -91,7 +91,14 @@ var AbstractEngraver = function (getTextSize, tuneNumber, options) {
 	this.accentAbove = !!options.accentAbove
 	this.germanAlphabet = !!options.germanAlphabet
 	this.diminishedColors = options.diminishedColors || 'metaharmony';
+	this.colorNoteheads = !!options.colorNoteheads; // apply the diminished family colors on every clef
 	this.reset();
+};
+
+/** Color of the diminished family (C, Bb or B dim7) a pitch belongs to, in the selected palette. */
+AbstractEngraver.prototype.diminishedFamilyColor = function (pitchElem) {
+	var colors = diminishedColorMap[this.diminishedColors] || diminishedColorMap.metaharmony;
+	return colors[getDiminishedGroup(pitchElem)];
 };
 
 AbstractEngraver.prototype.reset = function () {
@@ -578,6 +585,8 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 				if (graceColors.bDim) elem.gracenotes[i].diminishedColor = graceColors.bDim;
 				elem.gracenotes[i].diminishedScale = 0.74;
 			}
+		} else if (this.colorNoteheads) {
+			elem.gracenotes[i].diminishedColor = this.diminishedFamilyColor(elem.gracenotes[i]);
 		}
 		var ret = createNoteHead(abselem, graceC, elem.gracenotes[i],
 			{ dir: "up", headx: -graceoffsets[i], extrax: -graceoffsets[i], flag: flag, scale: gracescale * this.voiceScale, accidentalSlot: accidentalSlot });
@@ -812,6 +821,8 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 			}
 		} else
 			c = noteSymbol;
+		if (!voice.isDiminished && this.colorNoteheads)
+			elem.pitches[p].diminishedColor = this.diminishedFamilyColor(elem.pitches[p]);
 		// The highest position for the sake of placing slurs is itself if the slur is internal. It is the highest position possible if the slur is for the whole chord.
 		// If the note is the only one in the chord, then any slur it has counts as if it were on the whole chord.
 		elem.pitches[p].highestVert = elem.pitches[p].verticalPos;

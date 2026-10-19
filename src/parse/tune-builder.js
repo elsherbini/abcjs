@@ -976,13 +976,14 @@ function pushNote(self, tune, hp, voiceDefs, currentVoiceName) {
 	if (hp.pitches !== undefined) {
 		var mid = currStaff.workingClef.verticalPos;
 		var isDiminished = currStaff.workingClef.type.indexOf('diminished') === 0;
-		var keyAccidentals = isDiminished && currStaff.key ? currStaff.key.accidentals : null;
+		var keyAccidentals = currStaff.key ? currStaff.key.accidentals : null;
 		var clefOffset = isDiminished ? diminishedClefOffset(currStaff.workingClef.type) : 0;
-		if (isDiminished && !tune.diminishedBarAccidentals) tune.diminishedBarAccidentals = {};
+		if (!tune.diminishedBarAccidentals) tune.diminishedBarAccidentals = {};
 		hp.pitches.forEach(function (p) {
+			// Needed on every clef so notehead coloring sees the sounding pitch.
+			var effectiveAcc = resolveAccidental(p.pitch, p.accidental, tune.diminishedBarAccidentals, keyAccidentals);
+			p.effectiveAccidental = effectiveAcc;
 			if (isDiminished) {
-				var effectiveAcc = resolveAccidental(p.pitch, p.accidental, tune.diminishedBarAccidentals, keyAccidentals);
-				p.effectiveAccidental = effectiveAcc;
 				p.verticalPos = diminishedVerticalPos(p.pitch, effectiveAcc) + clefOffset;
 			} else {
 				p.verticalPos = p.pitch - mid;
@@ -992,13 +993,14 @@ function pushNote(self, tune, hp, voiceDefs, currentVoiceName) {
 	if (hp.gracenotes !== undefined) {
 		var mid2 = currStaff.workingClef.verticalPos;
 		var isDiminished2 = currStaff.workingClef.type.indexOf('diminished') === 0;
-		var keyAccidentals2 = isDiminished2 && currStaff.key ? currStaff.key.accidentals : null;
+		var keyAccidentals2 = currStaff.key ? currStaff.key.accidentals : null;
 		var clefOffset2 = isDiminished2 ? diminishedClefOffset(currStaff.workingClef.type) : 0;
-		if (isDiminished2 && !tune.diminishedBarAccidentals) tune.diminishedBarAccidentals = {};
+		if (!tune.diminishedBarAccidentals) tune.diminishedBarAccidentals = {};
 		hp.gracenotes.forEach(function (p) {
+			// Needed on every clef so notehead coloring sees the sounding pitch.
+			var effectiveAcc = resolveAccidental(p.pitch, p.accidental, tune.diminishedBarAccidentals, keyAccidentals2);
+			p.effectiveAccidental = effectiveAcc;
 			if (isDiminished2) {
-				var effectiveAcc = resolveAccidental(p.pitch, p.accidental, tune.diminishedBarAccidentals, keyAccidentals2);
-				p.effectiveAccidental = effectiveAcc;
 				p.verticalPos = diminishedVerticalPos(p.pitch, effectiveAcc) + clefOffset2;
 			} else {
 				p.verticalPos = p.pitch - mid2;
