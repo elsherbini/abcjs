@@ -571,6 +571,7 @@ AbstractEngraver.prototype.addGraceNotes = function (elem, voice, abselem, noteh
 		var accidentalSlot = [];
 		var graceC = "noteheads.quarter";
 		if (voice.isDiminished) {
+			elem.gracenotes[i].diminishedOutline = true; // diminished glyphs are sized to carry a matching stroke
 			var graceDimGroup = getDiminishedGroup(elem.gracenotes[i]);
 			var graceColors = diminishedColorMap[this.diminishedColors] || diminishedColorMap.metaharmony;
 			if (graceDimGroup === 'cDim') {
@@ -793,6 +794,7 @@ AbstractEngraver.prototype.addNoteToAbcElement = function (abselem, elem, dot, s
 		}
 		var c;
 		if (voice.isDiminished) {
+			elem.pitches[p].diminishedOutline = true; // diminished glyphs are sized to carry a matching stroke
 			var dimGroup = getDiminishedGroup(elem.pitches[p]);
 			var noteColors = diminishedColorMap[this.diminishedColors] || diminishedColorMap.metaharmony;
 			if (dimGroup === 'cDim') {

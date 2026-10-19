@@ -18,7 +18,8 @@ function drawRelativeElement(renderer, params, bartop) {
 				klass: renderer.controller.classes.generate(klass),
 				name: params.name
 			};
-			if (params.fill) symbolOpts.fill = params.fill; // fill only: a stroke would fatten the glyph
+			if (params.fill) symbolOpts.fill = params.fill;
+			if (params.stroke) symbolOpts.stroke = params.stroke; // only diminished glyphs ask for one; it fattens the shape
 			params.graphelem = printSymbol(renderer, params.x, params.pitch, params.c, symbolOpts);
 			break;
 		case "debug":
