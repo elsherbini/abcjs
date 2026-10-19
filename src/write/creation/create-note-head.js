@@ -103,7 +103,9 @@ var createNoteHead = function (abselem, c, pitchelem, options) {
 			accidentalshiftx = (glyphs.getSymbolWidth(symb) * scale + 2);
 		}
 		var h = glyphs.symbolHeightInPitches(symb);
-		abselem.addExtra(new RelativeElement(symb, accPlace, glyphs.getSymbolWidth(symb), pitch, { scalex: scale, scaley: scale, top: pitch + h / 2, bottom: pitch - h / 2 }));
+		var accOpts = { scalex: scale, scaley: scale, top: pitch + h / 2, bottom: pitch - h / 2 };
+		if (pitchelem.diminishedColor) accOpts.fill = pitchelem.diminishedColor; // accidental matches its notehead
+		abselem.addExtra(new RelativeElement(symb, accPlace, glyphs.getSymbolWidth(symb), pitch, accOpts));
 		extraLeft = glyphs.getSymbolWidth(symb) / 2; // TODO-PER: We need a little extra width if there is an accidental, but I'm not sure why it isn't the full width of the accidental.
 	}
 
